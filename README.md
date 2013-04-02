@@ -16,35 +16,56 @@ chmod +x ~/bin/avtc
 3. Change to the videos directory want to transcode.
 4. Then run `avtc`.
 ```
-$ avtc
-12:50:59 Cropdetect started on 'My Family Vacation-001'
-12:51:10 Cropdetect completed in 0:00:11
+$ avtc 
+13:38:43 Cropdetect started on 'My Family Vacation: Beach'
+13:38:55 Cropdetect completed in 0:00:12
          Video Duration: 00:03:00.00
          Video output 1280x720 at 1333kb/s
          Audio output stereo at 112kb/s
          Estimated output size of 32MB at 1445kb/s
          Pass1 Started
-12:57:36 Pass1 completed in 0:06:26
+13:45:18 Pass1 completed in 0:06:23
          Pass2 Started
-13:04:43 Pass2 completed in 0:07:07
-13:04:43 Completed transcoding in 0:13:44
+13:52:13 Pass2 completed in 0:06:55
+         Completed transcoding in 0:13:30
 ```
 ```
-13:04:43 Cropdetect started on 'My Family Vacation-002'
-13:04:54 Cropdetect completed in 0:00:11
+13:52:13 Cropdetect started on 'My Family Vacation: Volcano'
+13:52:24 Cropdetect completed in 0:00:11
          Video Duration: 00:03:00.00
          Video output 1280x720 at 1333kb/s
          Audio output stereo at 112kb/s
          Estimated output size of 32MB at 1445kb/s
          Pass1 Started
-13:10:53 Pass1 completed in 0:05:59
+13:58:11 Pass1 completed in 0:05:47
          Pass2 Started
-13:17:43 Pass2 completed in 0:06:50
-13:17:43 Completed transcoding in 0:13:00
+14:05:01 Pass2 completed in 0:06:50
+         Completed transcoding in 0:12:48
 ```
 
 5. Input files and logs will be stored in directory `0in`
+```
+$ ls -1 0in
+0pass-0.log
+0pass-0.log.mbtree
+0transcode.log
+My Family Vacation: Beach.mkv
+My Family Vacation: Beach.mkv.crop
+My Family Vacation: Beach.mkv.pass1
+My Family Vacation: Beach.mkv.pass2
+My Family Vacation: Volcano.mkv
+My Family Vacation: Volcano.mkv.crop
+My Family Vacation: Volcano.mkv.pass1
+My Family Vacation: Volcano.mkv.pass2
+```
+
 6. Transcoded file will be stored in directory `0out`
+```
+$ ls -1 0out
+My Family Vacation: Beach.mkv
+My Family Vacation: Volcano.mkv
+```
+
 
 ###Output Format
 * Vidoe is 2pass x264.
