@@ -139,7 +139,7 @@ def main():
 				timeCompleted = int(time.time())
 				timeJobSeconds = timeCompleted - timeStarted
 				timeJob = str(datetime.timedelta(seconds=timeJobSeconds))
-				printLog('{} Completed transcoding in {}\n'.format(time.strftime('%X'), timeJob))
+				printLog('         Completed transcoding in {}\n'.format(timeJob))
 	return 0
 
 if __name__ == '__main__':
