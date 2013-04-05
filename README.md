@@ -1,6 +1,6 @@
 avtc
 ====
-avtc is a GPLv2 licensed batch x264/vorbis/matroska transcoder written in python3 that uses libav's avconv.
+avtc is a GPLv2 licensed batch x264/Vorbis/Matroska transcoder written in Python3 that uses Libav's avconv.
 
 Documentation
 -------------
@@ -73,7 +73,7 @@ My Family Vacation: Volcano.mkv
 * Audio is Vorbis.
  * Quality is set to 3.
 * Container is Matroska.
-* Metadata `title` will be set to the file name minus the file extention.
+* Metadata `title` will be set to the filename minus the file extention.
 
 
 TODO
