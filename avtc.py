@@ -32,6 +32,7 @@ outputDir = '0out'
 audioBitrateDict = {
 	'mono' : 72,
 	'stereo' : 112,
+	'2' : 112,
 	'5.1' : 276,
 	'7.1' : 640}
 
@@ -116,7 +117,7 @@ def main():
 						printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
 					else:
 						printLog('         Audio ' +  audioCh + ' is unknown')
-						printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)), videoBitrate))
+						printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)).__round__(), videoBitrate))
 				else:
 					printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
 				timeStartPass1 = int(time.time())
