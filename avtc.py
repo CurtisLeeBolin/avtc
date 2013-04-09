@@ -33,6 +33,7 @@ audioBitrateDict = {
 	'mono' : 72,
 	'stereo' : 112,
 	'2' : 112,
+	'2 channels' : 112,
 	'5.1' : 276,
 	'7.1' : 640}
 
