@@ -55,8 +55,8 @@ def runSubprocess(args):
 	return stderrData
 
 def printLog(s):
-	with open(inputDir + '/0transcode.log', 'a') as f:
-		f.write(s + '\n')
+	with open('{}/0transcode.log'.format(inputDir), 'a') as f:
+		f.write('{}\n'.format(s))
 	print(s)
 
 if __name__ == '__main__':
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 				timeCompletedCrop = int(time.time()) - timeStarted
 				printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
-				with open(inputFile + '.crop', 'w') as f:
+				with open('{}.crop'.format(inputFile), 'w') as f:
 					f.write(stderrData)
 				printLog('         Video Duration: {}'.format(duration))
 				crop = re.findall('crop=(.*?)\n', stderrData)[-1]
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 						printLog('         Audio output {} at {}kb/s'.format(audioCh, audioBitrate))
 						printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
 					else:
-						printLog('         Audio ' +  audioCh + ' is unknown')
+						printLog('         Audio {} is unknown'.format(audioCh))
 						printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)).__round__(), videoBitrate))
 				else:
 					printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 				stderrData = runSubprocess(args)
 				timeCompletedPass1 = int(time.time()) - timeStartPass1
 				printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
-				with open(inputFile + '.pass1', 'w') as f:
+				with open('{}.pass1'.format(inputFile), 'w') as f:
 					f.write(stderrData)
 				timeStartPass2 = int(time.time())
 				printLog('         Pass2 Started')
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 				stderrData = runSubprocess(args)
 				timeCompletedPass2 = int(time.time()) - timeStartPass2
 				printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
-				with open(inputFile + '.pass2', 'w') as f:
+				with open('{}.pass2'.format(inputFile), 'w') as f:
 					f.write(stderrData)
 				os.rename(outputFilePart, outputFile)
 				timeCompleted = int(time.time())
