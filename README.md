@@ -1,22 +1,22 @@
 avtc
 ====
-avtc is a GPLv2 licensed batch x264/Vorbis/Matroska transcoder written in Python3 that uses Libav's avconv.
+avtc is a GPLv2 licensed batch x264/Vorbis/Matroska transcoder written in Python3 that uses FFmpeg.
 
 Documentation
 -------------
 
 ###Getting Started and Example Run
-1. Download avtc.py wherever you like. I stored it in `~/Projects/avtc/`.
+1. Download avtc.py wherever you like. I stored it in `~/Projects/video/avtc/`.
 2. Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/bin/`.
 ```
-ln -s ~/Projects/avtc/avtc.py ~/bin/avtc
+ln -s ~/Projects/video/avtc/avtc.py ~/bin/avtc
 chmod +x ~/bin/avtc
 ```
 
 3. Change to the videos directory you want to transcode.
 4. Run `avtc`.
 ```
-$ avtc 
+$ avtc
 13:38:43 Cropdetect started on 'My Family Vacation: Beach'
 13:38:55 Cropdetect completed in 0:00:12
          Video Duration: 00:03:00.00
@@ -78,5 +78,4 @@ My Family Vacation: Volcano.mkv
 
 TODO
 ----
-* Clean Up/Re-Order `try` `except` so it has less duplicate code and doesn't run `printLog` in `try` if an exception is thrown.
 * Add a lot of comments to the code.
