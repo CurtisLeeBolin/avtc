@@ -68,7 +68,7 @@ My Family Vacation: Volcano.mkv
 
 
 ###Output Format
-* Video is 2pass x264.
+* Video is h264 (High).
  * Bitrate is calculated by a formula in avtc.
 * Audio is Vorbis.
  * Quality is set to 3.
