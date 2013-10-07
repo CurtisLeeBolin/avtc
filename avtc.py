@@ -111,14 +111,14 @@ if __name__ == '__main__':
 					videoBitrateMin = ( videoBitrate - bitRateVary ).__round__()
 				else:
 					videoBitrateMin = 0
-				printLog('         Video output {}x{} at {}kb/s'.format(w, h, videoBitrate))
+				printLog('         Video output {}x{} estimated at {}kb/s'.format(w, h, videoBitrate))
 
 				audioCh = re.findall(' Hz, (.*?),', stderrData)[-1]
 
 				audioBitrate = audioBitrateDict.get(audioCh,'unknown')
 				if duration != 'N/A':
 					if audioBitrate != 'unknown':
-						printLog('         Audio output {} at {}kb/s'.format(audioCh, audioBitrate))
+						printLog('         Audio output {} estimated at {}kb/s'.format(audioCh, audioBitrate))
 						printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
 					else:
 						printLog('         Audio {} is unknown'.format(audioCh))
