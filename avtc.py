@@ -83,9 +83,13 @@ if __name__ == '__main__':
 				duration = re.findall('Duration: (.*?),', stderrData)[-1]
 				audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
 				durationList = duration.split(':')
-				durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
-				cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
-				cropDetectDuration =  str(datetime.timedelta(seconds=(durationSec / 100)))
+				if duration != 'N/A':
+					durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
+					cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
+					cropDetectDuration =  str(datetime.timedelta(seconds=(durationSec / 100)))
+				else:
+					cropDetectStart = '0'
+					cropDetectDuration = '60'
 				args = shlex.split('ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration))
 				stderrData = runSubprocess(args)
 
