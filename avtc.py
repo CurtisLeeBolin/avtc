@@ -49,7 +49,7 @@ def checkFileType(fileExtension):
 	return result
 
 def runSubprocess(args):
-	p = subprocess.Popen(args, stderr=subprocess.PIPE)
+	p = subprocess.Popen(shlex.split(args), stderr=subprocess.PIPE)
 	stdoutData, stderrData = p.communicate()
 	stderrData = stderrData.decode()
 	return stderrData
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 				printLog('{} Cropdetect started on {}'.format(time.strftime('%X'), fileName.__repr__()))
 				timeStarted = int(time.time())
 
-				args = shlex.split('ffmpeg -i {}'.format(inputFile.__repr__()))
+				args = 'ffmpeg -i {}'.format(inputFile.__repr__())
 				stderrData = runSubprocess(args)
 				duration = re.findall('Duration: (.*?),', stderrData)[-1]
 				audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 				else:
 					cropDetectStart = '0'
 					cropDetectDuration = '60'
-				args = shlex.split('ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration))
+				args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration)
 				stderrData = runSubprocess(args)
 
 				timeCompletedCrop = int(time.time()) - timeStarted
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 					printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
 				timeStartPass1 = int(time.time())
 				printLog('         Pass1 Started')
-				args = shlex.split('ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__()))
+				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__())
 				stderrData = runSubprocess(args)
 				timeCompletedPass1 = int(time.time()) - timeStartPass1
 				printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
@@ -136,9 +136,9 @@ if __name__ == '__main__':
 				timeStartPass2 = int(time.time())
 				printLog('         Pass2 Started')
 				if 'vorbis' in audioCodec:
-					args = shlex.split('ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__()))
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				else:
-					args = shlex.split('ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__()))
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				stderrData = runSubprocess(args)
 				timeCompletedPass2 = int(time.time()) - timeStartPass2
 				printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
