@@ -79,3 +79,5 @@ My Family Vacation: Volcano.mkv
 TODO
 ----
 * Add a lot of comments to the code.
+* Add a mode for deinterlacing
+* More work to modularize into a lib and tools
