@@ -95,7 +95,7 @@ if __name__ == '__main__':
 				else:
 					cropDetectStart = '0'
 					cropDetectDuration = '60'
-				args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration)
+				args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, os.devnull)
 				stderrData = avtc.runSubprocess(args)
 
 				timeCompletedCrop = int(time.time()) - timeStarted
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 					avtc.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
 				timeStartPass1 = int(time.time())
 				avtc.printLog('         Pass1 Started')
-				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y /dev/null'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__())
+				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
 				stderrData = avtc.runSubprocess(args)
 				timeCompletedPass1 = int(time.time()) - timeStartPass1
 				avtc.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
