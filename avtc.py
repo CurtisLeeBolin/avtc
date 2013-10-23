@@ -25,11 +25,15 @@
 import os, shlex, subprocess, time, datetime, re
 
 class AvtcCommon:
-	fileType=['avi', 'flv', 'mov', 'mp4', 'mpeg', 'mpg', 'ogg', 'ogm',
+	# list of file extentions too search for
+	fileExtList=['avi', 'flv', 'mov', 'mp4', 'mpeg', 'mpg', 'ogg', 'ogm',
 		'ogv', 'wmv', 'm2ts', 'mkv', 'rmvb', 'rm', '3gp', 'm4a', '3g2',
 		'mj2', 'asf', 'divx', 'vob']
+
 	inputDir = '0in'
 	outputDir = '0out'
+
+	# Just estimated bitrates for vorbis for certain channel numbers
 	audioBitrateDict = {
 		'mono' : 72,
 		'stereo' : 112,
@@ -38,12 +42,13 @@ class AvtcCommon:
 		'5.1' : 276,
 		'5.1(side)' : 276,
 		'7.1' : 640}
+
 	bitRateVary = 512.0
 
 	def checkFileType(self, fileExtension):
 		fileExtension = fileExtension[1:].lower()
 		result = False
-		for ext in self.fileType:
+		for ext in self.fileExtList:
 			if (ext == fileExtension):
 				result = True
 				break
@@ -59,9 +64,6 @@ class AvtcCommon:
 		with open('{}/0transcode.log'.format(self.inputDir), 'a') as f:
 			f.write('{}\n'.format(s))
 		print(s)
-
-#class avtc(AvtcCommon):
-#	pass
 
 if __name__ == '__main__':
 	avtc = AvtcCommon()
@@ -132,7 +134,7 @@ if __name__ == '__main__':
 					avtc.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
 				timeStartPass1 = int(time.time())
 				avtc.printLog('         Pass1 Started')
-				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
+				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
 				stderrData = avtc.runSubprocess(args)
 				timeCompletedPass1 = int(time.time()) - timeStartPass1
 				avtc.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
@@ -141,9 +143,9 @@ if __name__ == '__main__':
 				timeStartPass2 = int(time.time())
 				avtc.printLog('         Pass2 Started')
 				if 'vorbis' in audioCodec:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				else:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				stderrData = avtc.runSubprocess(args)
 				timeCompletedPass2 = int(time.time()) - timeStartPass2
 				avtc.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
