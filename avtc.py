@@ -22,7 +22,7 @@
 #
 #
 
-import os, shlex, subprocess, time, datetime, re
+import os, shlex, subprocess, time, datetime, re, argparse
 
 class AvtcCommon:
 	# list of file extentions too search for
@@ -48,13 +48,13 @@ class AvtcCommon:
 
 	bitRateVary = 512.0
 
-	def __init__(self, fileList, workingDir, options=None):
+	def __init__(self, fileList, workingDir, deinterlace, scale720p):
 		self.mkIODirs(workingDir)
 		for f in fileList:
 			if os.path.isfile(f):
 				fileName, fileExtension = os.path.splitext(f)
 				if self.checkFileType(fileExtension):
-					self.transcode(f, fileName)
+					self.transcode(f, fileName, deinterlace, scale720p)
 
 	def checkFileType(self, fileExtension):
 		fileExtension = fileExtension[1:].lower()
@@ -81,7 +81,12 @@ class AvtcCommon:
 			if not os.path.exists(dir):
 				os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
-	def transcode(self, f, fileName):
+	def transcode(self, f, fileName, deinterlace, scale720p):
+		videoFilterList = []
+		if deinterlace:
+			videoFilterList.append('yadif=0:-1:0')
+		if scale720p:
+			videoFilterList.append('scale=1280:-1')
 		inputFile  = '{}/{}'.format(self.inputDir, f)
 		outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
 		outputFilePart = '{}.part'.format(outputFile)
@@ -102,7 +107,11 @@ class AvtcCommon:
 		else:
 			cropDetectStart = '0'
 			cropDetectDuration = '60'
-		args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, os.devnull)
+
+		cropDetectVideoFilterList = list(videoFilterList)
+		cropDetectVideoFilterList.append('cropdetect')
+
+		args = 'ffmpeg -i {} -ss {} -t {} -filter:v {} -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, ','.join(cropDetectVideoFilterList), os.devnull)
 		stderrData = self.runSubprocess(args)
 
 		timeCompletedCrop = int(time.time()) - timeStarted
@@ -115,6 +124,8 @@ class AvtcCommon:
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
+
+		videoFilterList.append('crop={}'.format(crop))
 
 		resolution = w * h / 1024.0
 		videoBitrate = ( resolution * ( 2537.0**(1.0/2.5) / resolution**(1.0/2.5) ) ).__round__()
@@ -139,7 +150,7 @@ class AvtcCommon:
 			self.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
 		timeStartPass1 = int(time.time())
 		self.printLog('         Pass1 Started')
-		args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
+		args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
 		stderrData = self.runSubprocess(args)
 		timeCompletedPass1 = int(time.time()) - timeStartPass1
 		self.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
@@ -148,9 +159,9 @@ class AvtcCommon:
 		timeStartPass2 = int(time.time())
 		self.printLog('         Pass2 Started')
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 		else:
-			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 		stderrData = self.runSubprocess(args)
 		timeCompletedPass2 = int(time.time()) - timeStartPass2
 		self.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
@@ -163,10 +174,37 @@ class AvtcCommon:
 		self.printLog('         Completed transcoding in {}\n'.format(timeJob))
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser(
+		prog='avtc.py',
+		description='Audio Video Transcoder',
+		epilog='Copyright 2013 Curtis lee Bolin <CurtisLeeBolin@gmail.com>')
+	parser.add_argument('-f', '--filelist',
+		dest='fileList',
+		help='A comma separated list of files in the current directory')
+	parser.add_argument('-d', '--directory',
+		dest='directory',
+		help='A directory')
+	parser.add_argument('--deinterlace',
+		help='Deinterlace Videos.',
+		action="store_true")
+	parser.add_argument('--scale720p',
+		help='Scale Videos to 720p.',
+		action="store_true")
+	args = parser.parse_args()
 
-	workingDir = os.getcwd()
-	fileList = os.listdir(workingDir)
-	fileList.sort()
-	options = None
+	if (args.fileList and args.directory):
+		print('Arguments -f (--filelist) and -d (--directory) can not be used together.')
+		exit(1)
+	elif (args.fileList):
+		workingDir = os.getcwd()
+		fileList = args.fileList
+	elif (args.directory):
+		workingDir = args.directory
+		fileList = os.listdir(workingDir)
+		fileList.sort()
+	else:
+		workingDir = os.getcwd()
+		fileList = os.listdir(workingDir)
+		fileList.sort()
 
-	AvtcCommon(fileList, workingDir, options)
+	AvtcCommon(fileList, workingDir, args.deinterlace, args.scale720p)
