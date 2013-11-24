@@ -146,9 +146,9 @@ if __name__ == '__main__':
 				timeStartPass2 = int(time.time())
 				avtc.printLog('         Pass2 Started')
 				if 'vorbis' in audioCodec:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				else:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
 				stderrData = avtc.runSubprocess(args)
 				timeCompletedPass2 = int(time.time()) - timeStartPass2
 				avtc.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
