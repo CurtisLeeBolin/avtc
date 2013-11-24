@@ -48,6 +48,14 @@ class AvtcCommon:
 
 	bitRateVary = 512.0
 
+	def __init__(self, fileList, workingDir, options=None):
+		self.mkIODirs(workingDir)
+		for f in fileList:
+			if os.path.isfile(f):
+				fileName, fileExtension = os.path.splitext(f)
+				if self.checkFileType(fileExtension):
+					self.transcode(f, fileName)
+
 	def checkFileType(self, fileExtension):
 		fileExtension = fileExtension[1:].lower()
 		result = False
@@ -68,94 +76,97 @@ class AvtcCommon:
 			f.write('{}\n'.format(s))
 		print(s)
 
+	def mkIODirs(self, workingDir):
+		for dir in [self.inputDir, self.outputDir]:
+			if not os.path.exists(dir):
+				os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
+
+	def transcode(self, f, fileName):
+		inputFile  = '{}/{}'.format(self.inputDir, f)
+		outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
+		outputFilePart = '{}.part'.format(outputFile)
+		os.rename(f, inputFile)
+
+		self.printLog('{} Cropdetect started on {}'.format(time.strftime('%X'), fileName.__repr__()))
+		timeStarted = int(time.time())
+
+		args = 'ffmpeg -i {}'.format(inputFile.__repr__())
+		stderrData = self.runSubprocess(args)
+		duration = re.findall('Duration: (.*?),', stderrData)[-1]
+		audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
+		durationList = duration.split(':')
+		if duration != 'N/A':
+			durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
+			cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
+			cropDetectDuration =  str(datetime.timedelta(seconds=(durationSec / 100)))
+		else:
+			cropDetectStart = '0'
+			cropDetectDuration = '60'
+		args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, os.devnull)
+		stderrData = self.runSubprocess(args)
+
+		timeCompletedCrop = int(time.time()) - timeStarted
+		self.printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
+
+		with open('{}.crop'.format(inputFile), 'w') as f:
+			f.write(stderrData)
+		self.printLog('         Video Duration: {}'.format(duration))
+		crop = re.findall('crop=(.*?)\n', stderrData)[-1]
+		cropList = crop.split(':')
+		w = int(cropList[0])
+		h = int(cropList[1])
+
+		resolution = w * h / 1024.0
+		videoBitrate = ( resolution * ( 2537.0**(1.0/2.5) / resolution**(1.0/2.5) ) ).__round__()
+		videoBitrateMax = ( videoBitrate + self.bitRateVary ).__round__()
+		if ( videoBitrate > self.bitRateVary ):
+			videoBitrateMin = ( videoBitrate - self.bitRateVary ).__round__()
+		else:
+			videoBitrateMin = 0
+		self.printLog('         Video output {}x{} estimated at {}kb/s'.format(w, h, videoBitrate))
+
+		audioCh = re.findall(' Hz, (.*?),', stderrData)[-1]
+
+		audioBitrate = self.audioBitrateDict.get(audioCh,'unknown')
+		if duration != 'N/A':
+			if audioBitrate != 'unknown':
+				self.printLog('         Audio output {} estimated at {}kb/s'.format(audioCh, audioBitrate))
+				self.printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
+			else:
+				self.printLog('         Audio {} is unknown'.format(audioCh))
+				self.printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)).__round__(), videoBitrate))
+		else:
+			self.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
+		timeStartPass1 = int(time.time())
+		self.printLog('         Pass1 Started')
+		args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
+		stderrData = self.runSubprocess(args)
+		timeCompletedPass1 = int(time.time()) - timeStartPass1
+		self.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
+		with open('{}.pass1'.format(inputFile), 'w') as f:
+			f.write(stderrData)
+		timeStartPass2 = int(time.time())
+		self.printLog('         Pass2 Started')
+		if 'vorbis' in audioCodec:
+			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+		else:
+			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+		stderrData = self.runSubprocess(args)
+		timeCompletedPass2 = int(time.time()) - timeStartPass2
+		self.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
+		with open('{}.pass2'.format(inputFile), 'w') as f:
+			f.write(stderrData)
+		os.rename(outputFilePart, outputFile)
+		timeCompleted = int(time.time())
+		timeJobSeconds = timeCompleted - timeStarted
+		timeJob = str(datetime.timedelta(seconds=timeJobSeconds))
+		self.printLog('         Completed transcoding in {}\n'.format(timeJob))
+
 if __name__ == '__main__':
-	avtc = AvtcCommon()
-	for dir in [avtc.inputDir, avtc.outputDir]:
-		if not os.path.exists(dir):
-			os.mkdir(dir, 0o0755)
-	cwd = os.getcwd()
-	fileList = os.listdir(cwd)
+
+	workingDir = os.getcwd()
+	fileList = os.listdir(workingDir)
 	fileList.sort()
-	for f in fileList:
-		if os.path.isfile(f):
-			fileName, fileExtension = os.path.splitext(f)
-			if avtc.checkFileType(fileExtension):
-				inputFile  = '{}/{}'.format(avtc.inputDir, f)
-				outputFile = '{}/{}.mkv'.format(avtc.outputDir, fileName)
-				outputFilePart = '{}.part'.format(outputFile)
-				os.rename(f, inputFile)
+	options = None
 
-				avtc.printLog('{} Cropdetect started on {}'.format(time.strftime('%X'), fileName.__repr__()))
-				timeStarted = int(time.time())
-
-				args = 'ffmpeg -i {}'.format(inputFile.__repr__())
-				stderrData = avtc.runSubprocess(args)
-				duration = re.findall('Duration: (.*?),', stderrData)[-1]
-				audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
-				durationList = duration.split(':')
-				if duration != 'N/A':
-					durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
-					cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
-					cropDetectDuration =  str(datetime.timedelta(seconds=(durationSec / 100)))
-				else:
-					cropDetectStart = '0'
-					cropDetectDuration = '60'
-				args = 'ffmpeg -i {} -ss {} -t {} -filter:v cropdetect -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, os.devnull)
-				stderrData = avtc.runSubprocess(args)
-
-				timeCompletedCrop = int(time.time()) - timeStarted
-				avtc.printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
-
-				with open('{}.crop'.format(inputFile), 'w') as f:
-					f.write(stderrData)
-				avtc.printLog('         Video Duration: {}'.format(duration))
-				crop = re.findall('crop=(.*?)\n', stderrData)[-1]
-				cropList = crop.split(':')
-				w = int(cropList[0])
-				h = int(cropList[1])
-
-				resolution = w * h / 1024.0
-				videoBitrate = ( resolution * ( 2537.0**(1.0/2.5) / resolution**(1.0/2.5) ) ).__round__()
-				videoBitrateMax = ( videoBitrate + avtc.bitRateVary ).__round__()
-				if ( videoBitrate > avtc.bitRateVary ):
-					videoBitrateMin = ( videoBitrate - avtc.bitRateVary ).__round__()
-				else:
-					videoBitrateMin = 0
-				avtc.printLog('         Video output {}x{} estimated at {}kb/s'.format(w, h, videoBitrate))
-
-				audioCh = re.findall(' Hz, (.*?),', stderrData)[-1]
-
-				audioBitrate = avtc.audioBitrateDict.get(audioCh,'unknown')
-				if duration != 'N/A':
-					if audioBitrate != 'unknown':
-						avtc.printLog('         Audio output {} estimated at {}kb/s'.format(audioCh, audioBitrate))
-						avtc.printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
-					else:
-						avtc.printLog('         Audio {} is unknown'.format(audioCh))
-						avtc.printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)).__round__(), videoBitrate))
-				else:
-					avtc.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
-				timeStartPass1 = int(time.time())
-				avtc.printLog('         Pass1 Started')
-				args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
-				stderrData = avtc.runSubprocess(args)
-				timeCompletedPass1 = int(time.time()) - timeStartPass1
-				avtc.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
-				with open('{}.pass1'.format(inputFile), 'w') as f:
-					f.write(stderrData)
-				timeStartPass2 = int(time.time())
-				avtc.printLog('         Pass2 Started')
-				if 'vorbis' in audioCodec:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
-				else:
-					args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -vf crop={} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), avtc.inputDir, crop, videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
-				stderrData = avtc.runSubprocess(args)
-				timeCompletedPass2 = int(time.time()) - timeStartPass2
-				avtc.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
-				with open('{}.pass2'.format(inputFile), 'w') as f:
-					f.write(stderrData)
-				os.rename(outputFilePart, outputFile)
-				timeCompleted = int(time.time())
-				timeJobSeconds = timeCompleted - timeStarted
-				timeJob = str(datetime.timedelta(seconds=timeJobSeconds))
-				avtc.printLog('         Completed transcoding in {}\n'.format(timeJob))
+	AvtcCommon(fileList, workingDir, options)
