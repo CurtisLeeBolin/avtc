@@ -26,9 +26,11 @@ import os, shlex, subprocess, time, datetime, re
 
 class AvtcCommon:
 	# list of file extentions too search for
-	fileExtList=['avi', 'flv', 'mov', 'mp4', 'mpeg', 'mpg', 'ogg', 'ogm',
-		'ogv', 'wmv', 'm2ts', 'mkv', 'rmvb', 'rm', '3gp', 'm4a', '3g2',
-		'mj2', 'asf', 'divx', 'vob']
+	fileExtList = [
+		'3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
+		'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ogg', 'ogm',
+		'ogv', 'rm', 'rmvb', 'vob', 'wmv'
+	]
 
 	inputDir = '0in'
 	outputDir = '0out'
@@ -41,7 +43,8 @@ class AvtcCommon:
 		'2 channels' : 112,
 		'5.1' : 276,
 		'5.1(side)' : 276,
-		'7.1' : 640}
+		'7.1' : 640
+	}
 
 	bitRateVary = 512.0
 
