@@ -119,59 +119,28 @@ class AvtcCommon:
 
 		with open('{}.crop'.format(inputFile), 'w') as f:
 			f.write(stderrData)
-		self.printLog('         Video Duration: {}'.format(duration))
+		self.printLog('         Duration: {}'.format(duration))
 		crop = re.findall('crop=(.*?)\n', stderrData)[-1]
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
 
+		self.printLog('         Resolution: {}x{}'.format(w, h))
+
 		videoFilterList.append('crop={}'.format(crop))
 
-		resolution = w * h / 1024.0
-		videoBitrate = ( resolution * ( 2537.0**(1.0/2.5) / resolution**(1.0/2.5) ) ).__round__()
-		videoBitrateMax = ( videoBitrate + self.bitRateVary ).__round__()
-		if ( videoBitrate > self.bitRateVary ):
-			videoBitrateMin = ( videoBitrate - self.bitRateVary ).__round__()
-		else:
-			videoBitrateMin = 0
-		self.printLog('         Video output {}x{} estimated at {}kb/s'.format(w, h, videoBitrate))
-
-		audioCh = re.findall(' Hz, (.*?),', stderrData)[-1]
-
-		audioBitrate = self.audioBitrateDict.get(audioCh,'unknown')
-		if duration != 'N/A':
-			if audioBitrate != 'unknown':
-				self.printLog('         Audio output {} estimated at {}kb/s'.format(audioCh, audioBitrate))
-				self.printLog('         Estimated output size of {}MB at {}kb/s'.format((((videoBitrate + audioBitrate) * durationSec)/(1024 * 8)).__round__(), (videoBitrate + audioBitrate)))
-			else:
-				self.printLog('         Audio {} is unknown'.format(audioCh))
-				self.printLog('         Extimated output size of {}MB at {}kb/s (audio not included)\n'.format(((videoBitrate * durationSec)/(1024 * 8)).__round__(), videoBitrate))
-		else:
-			self.printLog('         Estimated file size can\'t be calculated since the duration is unknown.')
-		timeStartPass1 = int(time.time())
-		self.printLog('         Pass1 Started')
-		args = 'ffmpeg -i {} -pass 1 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), os.devnull)
-		stderrData = self.runSubprocess(args)
-		timeCompletedPass1 = int(time.time()) - timeStartPass1
-		self.printLog('{} Pass1 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass1)))
-		with open('{}.pass1'.format(inputFile), 'w') as f:
-			f.write(stderrData)
-		timeStartPass2 = int(time.time())
-		self.printLog('         Pass2 Started')
+		timeStartTranscoding = int(time.time())
+		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {} -filter:v {} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), fileName, outputFilePart.__repr__())
 		else:
-			args = 'ffmpeg -i {} -pass 2 -passlogfile {}/0pass -filter:v {} -c:v libx264 -preset veryslow -profile:v high -b:v {}k -maxrate {}k -minrate {}k -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), videoBitrate.__str__(), videoBitrateMax.__str__(), videoBitrateMin.__str__(), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {} -filter:v {} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{}" -y {}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName, outputFilePart.__repr__())
 		stderrData = self.runSubprocess(args)
-		timeCompletedPass2 = int(time.time()) - timeStartPass2
-		self.printLog('{} Pass2 completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedPass2)))
-		with open('{}.pass2'.format(inputFile), 'w') as f:
+		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
+		self.printLog('{} Transcoding completed in {}\n'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedTranscoding)))
+		with open('{}.transcode'.format(inputFile), 'w') as f:
 			f.write(stderrData)
 		os.rename(outputFilePart, outputFile)
-		timeCompleted = int(time.time())
-		timeJobSeconds = timeCompleted - timeStarted
-		timeJob = str(datetime.timedelta(seconds=timeJobSeconds))
-		self.printLog('         Completed transcoding in {}\n'.format(timeJob))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
@@ -197,7 +166,7 @@ if __name__ == '__main__':
 		exit(1)
 	elif (args.fileList):
 		workingDir = os.getcwd()
-		fileList = args.fileList
+		fileList = list(args.fileList)
 	elif (args.directory):
 		workingDir = args.directory
 		fileList = os.listdir(workingDir)
