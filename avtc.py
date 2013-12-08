@@ -132,7 +132,7 @@ class AvtcCommon:
 		timeStartTranscoding = int(time.time())
 		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -f matroska -metadata title="{2}" -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y {3}'.format(inputFile.__repr__(), self.inputDir, ','.join(videoFilterList), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -f matroska -metadata title="{2}" -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName, outputFilePart.__repr__())
 		else:
 			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{2}" -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName, outputFilePart.__repr__())
 		stderrData = self.runSubprocess(args)
