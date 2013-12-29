@@ -72,7 +72,7 @@ class AvtcCommon:
 		return stderrData
 
 	def printLog(self, s):
-		with open('{}/0transcode.log'.format(self.inputDir), 'a') as f:
+		with open('{}/0transcode.log'.format(self.inputDir), 'a', encoding='utf-8') as f:
 			f.write('{}\n'.format(s))
 		print(s)
 
@@ -117,7 +117,7 @@ class AvtcCommon:
 		timeCompletedCrop = int(time.time()) - timeStarted
 		self.printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
-		with open('{}.crop'.format(inputFile), 'w') as f:
+		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
 			f.write(stderrData)
 		self.printLog('         Duration: {}'.format(duration))
 		crop = re.findall('crop=(.*?)\n', stderrData)[-1]
@@ -138,7 +138,7 @@ class AvtcCommon:
 		stderrData = self.runSubprocess(args)
 		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
 		self.printLog('{} Transcoding completed in {}\n'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedTranscoding)))
-		with open('{}.transcode'.format(inputFile), 'w') as f:
+		with open('{}.transcode'.format(inputFile), 'w', encoding='utf-8') as f:
 			f.write(stderrData)
 		os.rename(outputFilePart, outputFile)
 
