@@ -68,7 +68,7 @@ class AvtcCommon:
 	def runSubprocess(self, args):
 		p = subprocess.Popen(shlex.split(args), stderr=subprocess.PIPE)
 		stdoutData, stderrData = p.communicate()
-		stderrData = stderrData.decode()
+		stderrData = stderrData.decode(encoding='utf-8', errors='ignore')
 		return stderrData
 
 	def printLog(self, s):
