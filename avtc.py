@@ -28,8 +28,8 @@ class AvtcCommon:
 	# list of file extentions too search for
 	fileExtList = [
 		'3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
-		'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ogg', 'ogm',
-		'ogv', 'rm', 'rmvb', 'vob', 'wmv'
+		'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'ogg',
+		'ogm', 'ogv', 'rm', 'rmvb', 'vob', 'wmv'
 	]
 
 	inputDir = '0in'
