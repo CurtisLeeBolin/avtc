@@ -3,7 +3,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2014 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -166,7 +166,7 @@ if __name__ == '__main__':
 		exit(1)
 	elif (args.fileList):
 		workingDir = os.getcwd()
-		fileList = list(args.fileList)
+		fileList = args.fileList.split(',')
 	elif (args.directory):
 		workingDir = args.directory
 		fileList = os.listdir(workingDir)
