@@ -3,7 +3,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2014 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2014 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
