@@ -1,19 +1,22 @@
 avtc
 ====
 avtc is a GPLv2 licensed batch x264/Vorbis/Matroska transcoder written in Python3 that uses FFmpeg.
+Copyright 2013-2014 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
 
 ###Getting Started and Example Run
-1. Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
-2. Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/.local/bin/`.
+
+* Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
+
+* Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/.local/bin/`.
 ```
 ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
 chmod +x ~/.local/bin/avtc
 ```
 
-3. View Help
+* View Help
 ```
  $ avtc --help
 usage: avtc.py [-h] [-f FILELIST] [-d DIRECTORY] [--deinterlace] [--scale720p]
@@ -32,8 +35,10 @@ optional arguments:
 
 Copyright 2013-2014 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
 ```
-4. Change to the videos directory you want to transcode.
-5. Run `avtc`.
+
+* Change to the videos directory you want to transcode.
+
+* Run `avtc`.
 ```
 $ avtc
 19:17:07 Cropdetect started on '2012 Vacation: Beach'
@@ -50,11 +55,9 @@ $ avtc
          Resolution: 720x480
          Transcoding Started
 19:25:07 Transcoding completed in 0:05:02
-
-
 ```
 
-6. Input files and logs will be stored in directory `0in`
+* Input files and logs will be stored in directory `0in`
 ```
 $ ls -1sh 0in/
 total 50M
@@ -67,14 +70,13 @@ total 50M
  52K 2012 Vacation: Volcano.mkv.transcode
 ```
 
-7. Transcoded files will be stored in directory `0out`
+* Transcoded files will be stored in directory `0out`
 ```
 $ ls -1sh 0out/
 total 41M
 15M 2012 Vacation: Beach.mkv
 27M 2012 Vacation: Volcano.mkv
 ```
-
 
 ###Output Format
 * Video is h264 (High).
