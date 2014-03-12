@@ -46,8 +46,6 @@ class AvtcCommon:
 		'7.1' : 640
 	}
 
-	bitRateVary = 512.0
-
 	def __init__(self, fileList, workingDir, deinterlace, scale720p):
 		self.mkIODirs(workingDir)
 		for f in fileList:
@@ -118,7 +116,7 @@ class AvtcCommon:
 		self.printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
 		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
-			f.write(stderrData)
+			f.write('{}\n\n{}'.format(args, stderrData))
 		self.printLog('         Duration: {}'.format(duration))
 		crop = re.findall('crop=(.*?)\n', stderrData)[-1]
 		cropList = crop.split(':')
@@ -132,14 +130,14 @@ class AvtcCommon:
 		timeStartTranscoding = int(time.time())
 		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -f matroska -metadata title="{2}" -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 		else:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s copy -f matroska -metadata title="{2}" -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName, outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s copy -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 		stderrData = self.runSubprocess(args)
 		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
 		self.printLog('{} Transcoding completed in {}\n'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedTranscoding)))
 		with open('{}.transcode'.format(inputFile), 'w', encoding='utf-8') as f:
-			f.write(stderrData)
+			f.write('{}\n\n{}'.format(args, stderrData))
 		os.rename(outputFilePart, outputFile)
 
 if __name__ == '__main__':
