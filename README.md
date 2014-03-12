@@ -6,78 +6,80 @@ Documentation
 -------------
 
 ###Getting Started and Example Run
-1. Download avtc.py wherever you like. I stored it in `~/Projects/video/avtc/`.
-2. Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/bin/`.
+1. Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
+2. Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/.local/bin/`.
 ```
-ln -s ~/Projects/video/avtc/avtc.py ~/bin/avtc
-chmod +x ~/bin/avtc
+ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
+chmod +x ~/.local/bin/avtc
 ```
 
-3. Change to the videos directory you want to transcode.
-4. Run `avtc`.
+3. View Help
+```
+ $ avtc --help
+usage: avtc.py [-h] [-f FILELIST] [-d DIRECTORY] [--deinterlace] [--scale720p]
+
+Audio Video Transcoder
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FILELIST, --filelist FILELIST
+                        A comma separated list of files in the current
+                        directory
+  -d DIRECTORY, --directory DIRECTORY
+                        A directory
+  --deinterlace         Deinterlace Videos.
+  --scale720p           Scale Videos to 720p.
+
+Copyright 2013-2014 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
+```
+4. Change to the videos directory you want to transcode.
+5. Run `avtc`.
 ```
 $ avtc
-13:38:43 Cropdetect started on 'My Family Vacation: Beach'
-13:38:55 Cropdetect completed in 0:00:12
-         Video Duration: 00:03:00.00
-         Video output 1280x720 at 1333kb/s
-         Audio output stereo at 112kb/s
-         Estimated output size of 32MB at 1445kb/s
-         Pass1 Started
-13:45:18 Pass1 completed in 0:06:23
-         Pass2 Started
-13:52:13 Pass2 completed in 0:06:55
-         Completed transcoding in 0:13:30
+19:17:07 Cropdetect started on '2012 Vacation: Beach'
+19:17:07 Cropdetect completed in 0:00:00
+         Duration: 00:03:00.07
+         Resolution: 720x480
+         Transcoding Started
+19:20:04 Transcoding completed in 0:02:57
 ```
 ```
-13:52:13 Cropdetect started on 'My Family Vacation: Volcano'
-13:52:24 Cropdetect completed in 0:00:11
-         Video Duration: 00:03:00.00
-         Video output 1280x720 at 1333kb/s
-         Audio output stereo at 112kb/s
-         Estimated output size of 32MB at 1445kb/s
-         Pass1 Started
-13:58:11 Pass1 completed in 0:05:47
-         Pass2 Started
-14:05:01 Pass2 completed in 0:06:50
-         Completed transcoding in 0:12:48
+19:20:04 Cropdetect started on '2012 Vacation: Volcano'
+19:20:05 Cropdetect completed in 0:00:01
+         Duration: 00:05:00.06
+         Resolution: 720x480
+         Transcoding Started
+19:25:07 Transcoding completed in 0:05:02
+
+
 ```
 
-5. Input files and logs will be stored in directory `0in`
+6. Input files and logs will be stored in directory `0in`
 ```
-$ ls -1 0in
-0pass-0.log
-0pass-0.log.mbtree
-0transcode.log
-My Family Vacation: Beach.mkv
-My Family Vacation: Beach.mkv.crop
-My Family Vacation: Beach.mkv.pass1
-My Family Vacation: Beach.mkv.pass2
-My Family Vacation: Volcano.mkv
-My Family Vacation: Volcano.mkv.crop
-My Family Vacation: Volcano.mkv.pass1
-My Family Vacation: Volcano.mkv.pass2
+$ ls -1sh 0in/
+total 50M
+4.0K 0transcode.log
+ 19M 2012 Vacation: Beach.mkv
+ 60K 2012 Vacation: Beach.mkv.crop
+ 36K 2012 Vacation: Beach.mkv.transcode
+ 32M 2012 Vacation: Volcano.mkv
+ 88K 2012 Vacation: Volcano.mkv.crop
+ 52K 2012 Vacation: Volcano.mkv.transcode
 ```
 
-6. Transcoded files will be stored in directory `0out`
+7. Transcoded files will be stored in directory `0out`
 ```
-$ ls -1 0out
-My Family Vacation: Beach.mkv
-My Family Vacation: Volcano.mkv
+$ ls -1sh 0out/
+total 41M
+15M 2012 Vacation: Beach.mkv
+27M 2012 Vacation: Volcano.mkv
 ```
 
 
 ###Output Format
 * Video is h264 (High).
- * Bitrate is calculated by a formula in avtc.
+ * Quality is set to 23.
 * Audio is Vorbis.
  * Quality is set to 3.
 * Container is Matroska.
 * Metadata `title` will be set to the filename minus the file extention.
-
-
-TODO
-----
-* Add a lot of comments to the code.
-* Add a mode for deinterlacing
-* More work to modularize into a lib and tools
