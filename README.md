@@ -1,6 +1,6 @@
 avtc
 ====
-`avtc` is a GPLv2 licensed batch x264/Vorbis/Matroska transcoder written in Python3 that uses FFmpeg.
+Audio Video TransCoder - Batch transcodes Audio Video files to x264/vorbis/mkv.
 
 Copyright 2013-2014 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
