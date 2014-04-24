@@ -35,17 +35,6 @@ class AvtcCommon:
 	inputDir = '0in'
 	outputDir = '0out'
 
-	# Just estimated bitrates for vorbis for certain channel numbers
-	audioBitrateDict = {
-		'mono' : 72,
-		'stereo' : 112,
-		'2' : 112,
-		'2 channels' : 112,
-		'5.1' : 276,
-		'5.1(side)' : 276,
-		'7.1' : 640
-	}
-
 	def __init__(self, fileList, workingDir, deinterlace, scale720p):
 		self.mkIODirs(workingDir)
 		for f in fileList:
