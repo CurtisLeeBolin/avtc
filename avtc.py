@@ -28,7 +28,7 @@ class AvtcCommon:
 	# list of file extentions too search for
 	fileExtList = [
 		'3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
-		'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts',
+		'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv',
 		'ogg', 'ogm', 'ogv', 'rm', 'rmvb', 'vob', 'webm', 'wmv'
 	]
 
