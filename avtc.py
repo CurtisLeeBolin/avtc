@@ -69,17 +69,12 @@ class AvtcCommon:
 				os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
 	def transcode(self, f, fileName, deinterlace, scale720p):
-		videoFilterList = []
-		if deinterlace:
-			videoFilterList.append('yadif=0:-1:0')
-		if scale720p:
-			videoFilterList.append('scale=1280:-1')
 		inputFile  = '{}/{}'.format(self.inputDir, f)
 		outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
 		outputFilePart = '{}.part'.format(outputFile)
 		os.rename(f, inputFile)
 
-		self.printLog('{} Cropdetect started on {}'.format(time.strftime('%X'), fileName.__repr__()))
+		self.printLog('{} Analyzing {}'.format(time.strftime('%X'), fileName.__repr__()))
 		timeStarted = int(time.time())
 
 		args = 'ffmpeg -i {}'.format(inputFile.__repr__())
@@ -87,6 +82,24 @@ class AvtcCommon:
 		duration = re.findall('Duration: (.*?),', stderrData)[-1]
 		audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
 		durationList = duration.split(':')
+
+		videoFilterList = []
+		if deinterlace:
+			videoFilterList.append('yadif=0:-1:0')
+		if scale720p:
+			resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
+			if resolution[-1] == ',':
+				resolution = resolution[:-1]
+			resolutionList = resolution.split('x')
+			w = int(resolutionList[0])
+			h = int(resolutionList[1])
+			print('         Resolution is {}x{}'.format(w, h))
+			if w > 1280 or h > 720:
+				videoFilterList.append('scale=1280:-1')
+				print('         Above 720p: Scaling Enabled')
+			else:
+				print('         Not Above 720p: Scaling Disabled')
+
 		if duration != 'N/A':
 			durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
 			cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
@@ -102,7 +115,7 @@ class AvtcCommon:
 		stderrData = self.runSubprocess(args)
 
 		timeCompletedCrop = int(time.time()) - timeStarted
-		self.printLog('{} Cropdetect completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
+		self.printLog('{} Analyzation completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
 		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
 			f.write('{}\n\n{}'.format(args, stderrData))
