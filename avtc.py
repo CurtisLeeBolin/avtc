@@ -55,8 +55,11 @@ class AvtcCommon:
 	def runSubprocess(self, args):
 		p = subprocess.Popen(shlex.split(args), stderr=subprocess.PIPE)
 		stdoutData, stderrData = p.communicate()
-		stderrData = stderrData.decode(encoding='utf-8', errors='ignore')
-		return stderrData
+		if not stdoutData is None:
+			stdoutData = stdoutData.decode(encoding='utf-8', errors='ignore')
+		if not stderrData is None:
+			stderrData = stderrData.decode(encoding='utf-8', errors='ignore')
+		return {'stdoutData': stdoutData, 'stderrData': stderrData, 'returncode': p.returncode}
 
 	def printLog(self, s):
 		with open('{}/0transcode.log'.format(self.inputDir), 'a', encoding='utf-8') as f:
@@ -78,16 +81,16 @@ class AvtcCommon:
 		timeStarted = int(time.time())
 
 		args = 'ffmpeg -i {}'.format(inputFile.__repr__())
-		stderrData = self.runSubprocess(args)
-		duration = re.findall('Duration: (.*?),', stderrData)[-1]
-		audioCodec = re.findall('Audio: (.*?),', stderrData)[-1]
+		subprocessDict = self.runSubprocess(args)
+		duration = re.findall('Duration: (.*?),', subprocessDict['stderrData'])[-1]
+		audioCodec = re.findall('Audio: (.*?),', subprocessDict['stderrData'])[-1]
 		durationList = duration.split(':')
 
 		videoFilterList = []
 		if deinterlace:
 			videoFilterList.append('yadif=0:-1:0')
 		if scale720p:
-			resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
+			resolution = re.findall('Video: .*? (\d\d+x\d+)', subprocessDict['stderrData'])[0]
 			if resolution[-1] == ',':
 				resolution = resolution[:-1]
 			resolutionList = resolution.split('x')
@@ -112,15 +115,15 @@ class AvtcCommon:
 		cropDetectVideoFilterList.append('cropdetect')
 
 		args = 'ffmpeg -i {} -ss {} -t {} -filter:v {} -an -sn -f rawvideo -y {}'.format(inputFile.__repr__(), cropDetectStart, cropDetectDuration, ','.join(cropDetectVideoFilterList), os.devnull)
-		stderrData = self.runSubprocess(args)
+		subprocessDict = self.runSubprocess(args)
 
 		timeCompletedCrop = int(time.time()) - timeStarted
 		self.printLog('{} Analyzation completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
 		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
-			f.write('{}\n\n{}'.format(args, stderrData))
+			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
 		self.printLog('         Duration: {}'.format(duration))
-		crop = re.findall('crop=(.*?)\n', stderrData)[-1]
+		crop = re.findall('crop=(.*?)\n', subprocessDict['stderrData'])[-1]
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
@@ -132,14 +135,23 @@ class AvtcCommon:
 		timeStartTranscoding = int(time.time())
 		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s copy -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s ass -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+			subprocessDict = self.runSubprocess(args)
+			if subprocessDict['returncode'] != 0:
+				args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -sn -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+				subprocessDict = self.runSubprocess(args)
+
 		else:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s copy -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
-		stderrData = self.runSubprocess(args)
+			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+			subprocessDict = self.runSubprocess(args)
+			if subprocessDict['returncode'] != 0:
+				args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+				subprocessDict = self.runSubprocess(args)
+
 		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
 		self.printLog('{} Transcoding completed in {}\n'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedTranscoding)))
 		with open('{}.transcode'.format(inputFile), 'w', encoding='utf-8') as f:
-			f.write('{}\n\n{}'.format(args, stderrData))
+			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
 		os.rename(outputFilePart, outputFile)
 
 if __name__ == '__main__':
