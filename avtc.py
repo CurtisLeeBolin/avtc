@@ -135,17 +135,17 @@ class AvtcCommon:
 		timeStartTranscoding = int(time.time())
 		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
 		if 'vorbis' in audioCodec:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -c:s ass -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -c:a copy -metadata title={2} -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 			subprocessDict = self.runSubprocess(args)
 			if subprocessDict['returncode'] != 0:
-				args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a copy -sn -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+				args = 'ffmpeg -i {0} -filter:v {1} -c:a copy -sn -metadata title={2} -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 				subprocessDict = self.runSubprocess(args)
 
 		else:
-			args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -c:s ass" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+			args = 'ffmpeg -i {0} -filter:v {1} -metadata title={2} -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 			subprocessDict = self.runSubprocess(args)
 			if subprocessDict['returncode'] != 0:
-				args = 'ffmpeg -i {0} -filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn -metadata title={2} -metadata ffmpeg_settings="-filter:v {1} -c:v libx264 -preset:v veryslow -profile:v high -crf:v 23 -c:a libvorbis -q:a 3 -sn" -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
+				args = 'ffmpeg -i {0} -filter:v {1} -sn -metadata title={2} -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 				subprocessDict = self.runSubprocess(args)
 
 		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
