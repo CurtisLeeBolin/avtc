@@ -118,7 +118,7 @@ class AvtcCommon:
 		subprocessDict = self.runSubprocess(args)
 
 		timeCompletedCrop = int(time.time()) - timeStarted
-		self.printLog('{} Analyzation completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
+		self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
 		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
 			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
