@@ -11,7 +11,7 @@ Documentation
 
 * Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
 
-* Put a symbolic link somewhere in your $PATH and make it executable.  I chose `~/.local/bin/`.
+* Put a symbolic link somewhere in your $PATH.  I chose `~/.local/bin/`.
 ```
 ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
 ```
