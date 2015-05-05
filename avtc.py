@@ -160,7 +160,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(
 		prog='avtc.py',
 		description='Audio Video Transcoder',
-		epilog='Copyright 2013-2014 Curtis lee Bolin <CurtisLeeBolin@gmail.com>')
+		epilog='Copyright 2013-2015 Curtis lee Bolin <CurtisLeeBolin@gmail.com>')
 	parser.add_argument('-f', '--filelist',
 		dest='fileList',
 		help='A comma separated list of files in the current directory')
