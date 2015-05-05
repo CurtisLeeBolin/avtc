@@ -36,7 +36,7 @@ class AvtcCommon:
 	outputDir = '0out'
 	logDir = '0log'
 
-	def __init__(self, fileList, workingDir, deinterlace, scale720p):
+	def __init__(self, fileList, workingDir, deinterlace=False, scale720p=False):
 		self.mkIODirs(workingDir)
 		for f in fileList:
 			if os.path.isfile(f):
