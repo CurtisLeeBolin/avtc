@@ -34,6 +34,7 @@ class AvtcCommon:
 
 	inputDir = '0in'
 	outputDir = '0out'
+	logDir = '0log'
 
 	def __init__(self, fileList, workingDir, deinterlace, scale720p):
 		self.mkIODirs(workingDir)
@@ -62,12 +63,12 @@ class AvtcCommon:
 		return {'stdoutData': stdoutData, 'stderrData': stderrData, 'returncode': p.returncode}
 
 	def printLog(self, s):
-		with open('{}/0transcode.log'.format(self.inputDir), 'a', encoding='utf-8') as f:
+		with open('{}/0transcode.log'.format(self.logDir), 'a', encoding='utf-8') as f:
 			f.write('{}\n'.format(s))
 		print(s)
 
 	def mkIODirs(self, workingDir):
-		for dir in [self.inputDir, self.outputDir]:
+		for dir in [self.inputDir, self.outputDir, self.logDir]:
 			if not os.path.exists(dir):
 				os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
@@ -75,6 +76,7 @@ class AvtcCommon:
 		inputFile  = '{}/{}'.format(self.inputDir, f)
 		outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
 		outputFilePart = '{}.part'.format(outputFile)
+		logFile  = '{}/{}'.format(self.logDir, f)
 		os.rename(f, inputFile)
 
 		self.printLog('{} Analyzing {}'.format(time.strftime('%X'), fileName.__repr__()))
@@ -120,7 +122,7 @@ class AvtcCommon:
 		timeCompletedCrop = int(time.time()) - timeStarted
 		self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedCrop)))
 
-		with open('{}.crop'.format(inputFile), 'w', encoding='utf-8') as f:
+		with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
 			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
 		self.printLog('         Duration: {}'.format(duration))
 		crop = re.findall('crop=(.*?)\n', subprocessDict['stderrData'])[-1]
@@ -150,7 +152,7 @@ class AvtcCommon:
 
 		timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
 		self.printLog('{} Transcoding completed in {}\n'.format(time.strftime('%X'), datetime.timedelta(seconds=timeCompletedTranscoding)))
-		with open('{}.transcode'.format(inputFile), 'w', encoding='utf-8') as f:
+		with open('{}.transcode'.format(logFile), 'w', encoding='utf-8') as f:
 			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
 		os.rename(outputFilePart, outputFile)
 
