@@ -77,6 +77,7 @@ class AvtcCommon:
 		outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
 		outputFilePart = '{}.part'.format(outputFile)
 		logFile  = '{}/{}'.format(self.logDir, f)
+		timeSpace = '        '
 		os.rename(f, inputFile)
 
 		self.printLog('{} Analyzing {}'.format(time.strftime('%X'), fileName.__repr__()))
@@ -98,12 +99,12 @@ class AvtcCommon:
 			resolutionList = resolution.split('x')
 			w = int(resolutionList[0])
 			h = int(resolutionList[1])
-			print('         Input Resolution: {}x{}'.format(w, h))
+			print('{} Input Resolution: {}x{}'.format(timeSpace,w, h))
 			if w > 1280 or h > 720:
 				videoFilterList.append('scale=1280:-1')
-				print('         Above 720p: Scaling Enabled')
+				print('{} Above 720p: Scaling Enabled'.format(timeSpace))
 			else:
-				print('         Not Above 720p: Scaling Disabled')
+				print('{} Not Above 720p: Scaling Disabled'.format(timeSpace))
 
 		if duration != 'N/A':
 			durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
@@ -124,18 +125,18 @@ class AvtcCommon:
 
 		with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
 			f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
-		self.printLog('         Duration: {}'.format(duration))
+		self.printLog('{} Duration: {}'.format(timeSpace,duration))
 		crop = re.findall('crop=(.*?)\n', subprocessDict['stderrData'])[-1]
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
 
-		self.printLog('         Ouput Resolution: {}x{}'.format(w, h))
+		self.printLog('{} Ouput Resolution: {}x{}'.format(timeSpace,w, h))
 
 		videoFilterList.append('crop={}'.format(crop))
 
 		timeStartTranscoding = int(time.time())
-		self.printLog('         Transcoding Started'.format(time.strftime('%X')))
+		self.printLog('{} Transcoding Started'.format(timeSpace))
 		if 'vorbis' in audioCodec:
 			args = 'ffmpeg -i {0} -filter:v {1} -c:a copy -metadata title={2} -y -f matroska {3}'.format(inputFile.__repr__(), ','.join(videoFilterList), fileName.__repr__(), outputFilePart.__repr__())
 			subprocessDict = self.runSubprocess(args)
