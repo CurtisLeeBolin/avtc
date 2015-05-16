@@ -42,7 +42,6 @@ Copyright 2013-2015 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 $ avtc
 19:17:07 Analyzing '2012 Vacation: Beach'
-         Input Resolution: 720x480
 19:17:07 Analysis completed in 0:00:00
          Duration: 00:03:00.07
          Input  Resolution: 720x480
