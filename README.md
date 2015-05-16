@@ -44,7 +44,7 @@ $ avtc
 19:17:07 Analyzing '2012 Vacation: Beach'
 19:17:07 Analysis completed in 0:00:00
          Duration: 00:03:00.07
-         Resolution: 720x480
+         Output Resolution: 720x480
          Transcoding Started
 19:20:04 Transcoding completed in 0:02:57
 ```
@@ -52,7 +52,7 @@ $ avtc
 19:20:04 Analyzing '2012 Vacation: Volcano'
 19:20:05 Analysis completed in 0:00:01
          Duration: 00:05:00.06
-         Resolution: 720x480
+         Output Resolution: 720x480
          Transcoding Started
 19:25:07 Transcoding completed in 0:05:02
 ```
