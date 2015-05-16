@@ -88,19 +88,19 @@ class AvtcCommon:
 		duration = re.findall('Duration: (.*?),', subprocessDict['stderrData'])[-1]
 		audioCodec = re.findall('Audio: (.*?),', subprocessDict['stderrData'])[-1]
 		durationList = duration.split(':')
+		resolution = re.findall('Video: .*? (\d\d+x\d+)', subprocessDict['stderrData'])[0]
+		if resolution[-1] == ',':
+			resolution = resolution[:-1]
+		resolutionList = resolution.split('x')
+		input_w = int(resolutionList[0])
+		input_h = int(resolutionList[1])
+		print('{} Input Resolution: {}x{}'.format(timeSpace, input_w, input_h))
 
 		videoFilterList = []
 		if deinterlace:
 			videoFilterList.append('yadif=0:-1:0')
 		if scale720p:
-			resolution = re.findall('Video: .*? (\d\d+x\d+)', subprocessDict['stderrData'])[0]
-			if resolution[-1] == ',':
-				resolution = resolution[:-1]
-			resolutionList = resolution.split('x')
-			w = int(resolutionList[0])
-			h = int(resolutionList[1])
-			print('{} Input Resolution: {}x{}'.format(timeSpace,w, h))
-			if w > 1280 or h > 720:
+			if input_w > 1280 or input_h > 720:
 				videoFilterList.append('scale=1280:-1')
 				print('{} Above 720p: Scaling Enabled'.format(timeSpace))
 			else:
