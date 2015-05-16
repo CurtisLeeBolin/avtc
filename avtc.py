@@ -98,7 +98,7 @@ class AvtcCommon:
 			resolutionList = resolution.split('x')
 			w = int(resolutionList[0])
 			h = int(resolutionList[1])
-			print('         Resolution is {}x{}'.format(w, h))
+			print('         Input Resolution: {}x{}'.format(w, h))
 			if w > 1280 or h > 720:
 				videoFilterList.append('scale=1280:-1')
 				print('         Above 720p: Scaling Enabled')
@@ -130,7 +130,7 @@ class AvtcCommon:
 		w = int(cropList[0])
 		h = int(cropList[1])
 
-		self.printLog('         Resolution: {}x{}'.format(w, h))
+		self.printLog('         Ouput Resolution: {}x{}'.format(w, h))
 
 		videoFilterList.append('crop={}'.format(crop))
 
