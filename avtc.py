@@ -94,7 +94,6 @@ class AvtcCommon:
 		resolutionList = resolution.split('x')
 		input_w = int(resolutionList[0])
 		input_h = int(resolutionList[1])
-		print('{} Input Resolution: {}x{}'.format(timeSpace, input_w, input_h))
 
 		videoFilterList = []
 		if deinterlace:
@@ -102,9 +101,9 @@ class AvtcCommon:
 		if scale720p:
 			if input_w > 1280 or input_h > 720:
 				videoFilterList.append('scale=1280:-1')
-				print('{} Above 720p: Scaling Enabled'.format(timeSpace))
+				self.printLog('{} Above 720p: Scaling Enabled'.format(timeSpace))
 			else:
-				print('{} Not Above 720p: Scaling Disabled'.format(timeSpace))
+				self.printLog('{} Not Above 720p: Scaling Disabled'.format(timeSpace))
 
 		if duration != 'N/A':
 			durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
@@ -130,8 +129,9 @@ class AvtcCommon:
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
-
-		self.printLog('{} Ouput Resolution: {}x{}'.format(timeSpace,w, h))
+		
+		self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace, input_w, input_h))
+		self.printLog('{} Output Resolution: {}x{}'.format(timeSpace,w, h))
 
 		videoFilterList.append('crop={}'.format(crop))
 
