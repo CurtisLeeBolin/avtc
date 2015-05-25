@@ -85,13 +85,19 @@ class AvtcCommon:
 
 		args = 'ffmpeg -i {}'.format(inputFile.__repr__())
 		subprocessDict = self.runSubprocess(args)
-		duration = re.findall('Duration: (.*?),', subprocessDict['stderrData'])[-1]
+
+		durationList = re.findall('Duration: (.*?),', subprocessDict['stderrData'])
+		duration = 'N/A'
+		durationSplitList = None
+		if durationList:
+			duration = durationList[-1]
+			durationSplitList = duration.split(':')
+
 		audioCodecList = re.findall('Audio: (.*?),', subprocessDict['stderrData'])
+		audioCodec = ''
 		if audioCodecList:
 			audioCodec = audioCodecList[-1]
-		else:
-			audioCodec = ''
-		durationList = duration.split(':')
+
 		resolution = re.findall('Video: .*? (\d\d+x\d+)', subprocessDict['stderrData'])[0]
 		if resolution[-1] == ',':
 			resolution = resolution[:-1]
@@ -110,7 +116,7 @@ class AvtcCommon:
 				self.printLog('{} Not Above 720p: Scaling Disabled'.format(timeSpace))
 
 		if duration != 'N/A':
-			durationSec = 60 * 60 * int(durationList[0]) + 60 * int(durationList[1]) + float(durationList[2])
+			durationSec = 60 * 60 * int(durationSplitList[0]) + 60 * int(durationSplitList[1]) + float(durationSplitList[2])
 			cropDetectStart =  str(datetime.timedelta(seconds=(durationSec / 10)))
 			cropDetectDuration =  str(datetime.timedelta(seconds=(durationSec / 100)))
 		else:
