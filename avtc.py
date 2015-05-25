@@ -86,7 +86,11 @@ class AvtcCommon:
 		args = 'ffmpeg -i {}'.format(inputFile.__repr__())
 		subprocessDict = self.runSubprocess(args)
 		duration = re.findall('Duration: (.*?),', subprocessDict['stderrData'])[-1]
-		audioCodec = re.findall('Audio: (.*?),', subprocessDict['stderrData'])[-1]
+		audioCodecList = re.findall('Audio: (.*?),', subprocessDict['stderrData'])
+		if audioCodecList:
+			audioCodec = audioCodecList[-1]
+		else:
+			audioCodec = ''
 		durationList = duration.split(':')
 		resolution = re.findall('Video: .*? (\d\d+x\d+)', subprocessDict['stderrData'])[0]
 		if resolution[-1] == ',':
@@ -129,7 +133,7 @@ class AvtcCommon:
 		cropList = crop.split(':')
 		w = int(cropList[0])
 		h = int(cropList[1])
-		
+
 		self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace, input_w, input_h))
 		self.printLog('{} Output Resolution: {}x{}'.format(timeSpace,w, h))
 
