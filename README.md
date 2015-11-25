@@ -1,22 +1,23 @@
 avtc
 ====
-Audio Video TransCoder - Batch transcodes Audio Video files to h264/vorbis/ass/mkv.
+__A__udio __V__ideo __T__rans__C__oder - Batch transcodes Audio Video files to H.265/Vorbis/ASS/Matroska.
 
 Copyright 2013-2015 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
 
-###Getting Started and Example Run
+### Getting Started and Example Run
 
 * Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
-
 * Put a symbolic link somewhere in your $PATH.  I chose `~/.local/bin/`.
+
 ```
 ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
 ```
 
 * View Help
+
 ```
 $ avtc --help
 usage: avtc.py [-h] [-f FILELIST] [-d DIRECTORY] [--deinterlace] [--scale720p]
@@ -39,6 +40,7 @@ Copyright 2013-2015 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
 * Change to the videos directory you want to transcode.
 
 * Run `avtc`.
+
 ```
 $ avtc
 19:17:07 Analyzing '2012 Vacation: Beach'
@@ -49,6 +51,7 @@ $ avtc
          Transcoding Started
 19:20:04 Transcoding completed in 0:02:57
 ```
+
 ```
 19:20:04 Analyzing '2012 Vacation: Volcano'
 19:20:05 Analysis completed in 0:00:01
@@ -60,6 +63,7 @@ $ avtc
 ```
 
 * Input files are be stored in directory `0in`
+
 ```
 $ ls -1sh 0in/
 total 49M
@@ -68,6 +72,7 @@ total 49M
 ```
 
 * Transcoded files are stored in directory `0out`
+
 ```
 $ ls -1sh 0out/
 total 41M
@@ -76,6 +81,7 @@ total 41M
 ```
 
 * Logs files are stored in directory `0log`
+
 ```
 $ ls -1sh 0log/
 total 240K
@@ -86,9 +92,9 @@ total 240K
  52K 2012 Vacation: Volcano.mkv.transcode
 ```
 
-###Output Format
-* Video: h264
+### Output Format
+* Video: H.265
 * Audio: Vorbis
-* Subtitles: ASS
+* Subtitles: ASS (text subtitles) or Copied From Source (image subtitles)
 * Container: Matroska
-* Metadata: `title` is set to the filename minus the file extention
+* Metadata: `title` is set to the filename minus the file extension
