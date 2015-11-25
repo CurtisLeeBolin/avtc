@@ -31,7 +31,7 @@ import argparse
 
 
 class AvtcCommon:
-    # list of file extentions too search for
+    # list of file extentions to find
     fileExtList = [
         '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
         'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts',
