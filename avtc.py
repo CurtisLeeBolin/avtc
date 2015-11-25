@@ -174,7 +174,7 @@ class AvtcCommon:
         timeStartTranscoding = int(time.time())
         self.printLog('{} Transcoding Started'.format(timeSpace))
         if 'vorbis' in audioCodec:
-            args = ('ffmpeg -i {0} -filter:v {1} -c:a copy -metadata '
+            args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:a copy -metadata '
                     'title={2} -y -f matroska {3}').format(
                     inputFile.__repr__(), ','.join(videoFilterList),
                     fileName.__repr__(), outputFilePart.__repr__())
@@ -184,8 +184,8 @@ class AvtcCommon:
                           encoding='utf-8') as f:
                     f.write('{}\n\n{}'.format(args,
                                               subprocessDict['stderrData']))
-                args = ('ffmpeg -i {0} -filter:v {1} -c:a copy -sn '
-                        '-metadata title={2} -y -f '
+                args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:a copy '
+                        '-c:s copy -metadata title={2} -y -f '
                         'matroska {3}').format(inputFile.__repr__(),
                                                ','.join(videoFilterList),
                                                fileName.__repr__(),
@@ -193,7 +193,7 @@ class AvtcCommon:
                 subprocessDict = self.runSubprocess(args)
 
         else:
-            args = ('ffmpeg -i {0} -filter:v {1} '
+            args = ('ffmpeg -i {0} -filter:v {1} -map 0 '
                     '-metadata title={2} -y -f matroska '
                     '{3}').format(inputFile.__repr__(),
                                   ','.join(videoFilterList),
@@ -205,7 +205,7 @@ class AvtcCommon:
                           encoding='utf-8') as f:
                     f.write('{}\n\n{}'.format(args,
                                               subprocessDict['stderrData']))
-                args = ('ffmpeg -i {0} -filter:v {1} -sn '
+                args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:s copy '
                         '-metadata title={2} -y -f matroska '
                         '{3}').format(inputFile.__repr__(),
                                       ','.join(videoFilterList),
