@@ -180,6 +180,10 @@ class AvtcCommon:
                     fileName.__repr__(), outputFilePart.__repr__())
             subprocessDict = self.runSubprocess(args)
             if subprocessDict['returncode'] != 0:
+                with open('{}.first_run_error'.format(logFile), 'w',
+                          encoding='utf-8') as f:
+                    f.write('{}\n\n{}'.format(args,
+                                              subprocessDict['stderrData']))
                 args = ('ffmpeg -i {0} -filter:v {1} -c:a copy -sn '
                         '-metadata title={2} -y -f '
                         'matroska {3}').format(inputFile.__repr__(),
@@ -197,6 +201,10 @@ class AvtcCommon:
                                   outputFilePart.__repr__())
             subprocessDict = self.runSubprocess(args)
             if subprocessDict['returncode'] != 0:
+                with open('{}.first_run_error'.format(logFile), 'w',
+                          encoding='utf-8') as f:
+                    f.write('{}\n\n{}'.format(args,
+                                              subprocessDict['stderrData']))
                 args = ('ffmpeg -i {0} -filter:v {1} -sn '
                         '-metadata title={2} -y -f matroska '
                         '{3}').format(inputFile.__repr__(),
@@ -205,13 +213,18 @@ class AvtcCommon:
                                       outputFilePart.__repr__())
                 subprocessDict = self.runSubprocess(args)
 
+        if subprocessDict['returncode'] != 0:
+            with open('{}.error'.format(logFile), 'w', encoding='utf-8') as f:
+                f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
+        else:
+            with open('{}.transcode'.format(logFile), 'w',
+                      encoding='utf-8') as f:
+                f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
         self.printLog(('{} Transcoding completed in '
                        '{}\n').format(time.strftime('%X'),
                                       datetime.timedelta(
                                           seconds=timeCompletedTranscoding)))
-        with open('{}.transcode'.format(logFile), 'w', encoding='utf-8') as f:
-            f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
         os.rename(outputFilePart, outputFile)
 
 if __name__ == '__main__':
