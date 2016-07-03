@@ -234,6 +234,8 @@ if __name__ == '__main__':
 
     import argparse
 
+    os.nice(19)
+
     parser = argparse.ArgumentParser(prog='avtc.py',
                                      description='Audio Video Transcoder',
                                      epilog=('Copyright 2013-2015 '
