@@ -27,7 +27,6 @@ import subprocess
 import time
 import datetime
 import re
-import argparse
 
 
 class AvtcCommon:
@@ -232,6 +231,9 @@ class AvtcCommon:
         os.rename(outputFilePart, outputFile)
 
 if __name__ == '__main__':
+
+    import argparse
+
     parser = argparse.ArgumentParser(prog='avtc.py',
                                      description='Audio Video Transcoder',
                                      epilog=('Copyright 2013-2015 '
