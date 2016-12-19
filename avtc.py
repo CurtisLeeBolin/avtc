@@ -229,7 +229,8 @@ if __name__ == '__main__':
 
     import argparse
 
-    os.nice(19)
+    if os.name == 'posix':
+        os.nice(19)
 
     parser = argparse.ArgumentParser(prog='avtc.py',
                                      description='Audio Video Transcoder',
