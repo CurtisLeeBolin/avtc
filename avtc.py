@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2015 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2016 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -110,6 +110,12 @@ class AvtcCommon:
         if audioCodecList:
             audioCodec = audioCodecList[-1]
 
+        videoCodecList = re.findall('Video: (.*?),',
+                                    subprocessDict['stderrData'])
+        videoCodec = ''
+        if videoCodecList:
+            videoCodec = videoCodecList[-1]
+
         resolution = re.findall('Video: .*? (\d\d+x\d+)',
                                 subprocessDict['stderrData'])[0]
         if resolution[-1] == ',':
@@ -172,49 +178,38 @@ class AvtcCommon:
 
         timeStartTranscoding = int(time.time())
         self.printLog('{} Transcoding Started'.format(timeSpace))
-        if 'vorbis' in audioCodec:
-            args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:v libx265 '
-                    '-preset medium -x265-params crf=23 -c:a copy -metadata '
-                    'title={2} -y -f matroska {3}').format(
-                    inputFile.__repr__(), ','.join(videoFilterList),
-                    fileName.__repr__(), outputFilePart.__repr__())
-            subprocessDict = self.runSubprocess(args)
-            if subprocessDict['returncode'] != 0:
-                with open('{}.first_run_error'.format(logFile), 'w',
-                          encoding='utf-8') as f:
-                    f.write('{}\n\n{}'.format(args,
-                                              subprocessDict['stderrData']))
-                args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:v libx265 '
-                        '-preset medium -x265-params crf=23 -c:a copy '
-                        '-c:s copy -metadata title={2} -y -f '
-                        'matroska {3}').format(inputFile.__repr__(),
-                                               ','.join(videoFilterList),
-                                               fileName.__repr__(),
-                                               outputFilePart.__repr__())
-                subprocessDict = self.runSubprocess(args)
 
-        else:
-            args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:v libx265 '
-                    '-preset medium -x265-params crf=23 '
+        videoArgs = '-c:v libx265 -preset medium -x265-params crf=23'
+        if 'h265' in videoCodec:
+            videoArgs = '-c:v copy'
+
+        audioArgs = ''
+        if 'vorbis' in audioCodec:
+            audioArgs = '-c:a copy'
+
+        args = ('ffmpeg -i {0} -filter:v {1} -map 0 {4} {5}'
+                '-metadata title={2} -y -f matroska '
+                '{3}').format(inputFile.__repr__(),
+                              ','.join(videoFilterList),
+                              fileName.__repr__(),
+                              outputFilePart.__repr__(),
+                              videoArgs,
+                              audioArgs)
+        subprocessDict = self.runSubprocess(args)
+        if subprocessDict['returncode'] != 0:
+            with open('{}.first_run_error'.format(logFile), 'w',
+                      encoding='utf-8') as f:
+                f.write('{}\n\n{}'.format(args,
+                                          subprocessDict['stderrData']))
+            args = ('ffmpeg -i {0} -filter:v {1} -map 0 {4} {5} -c:s copy '
                     '-metadata title={2} -y -f matroska '
                     '{3}').format(inputFile.__repr__(),
                                   ','.join(videoFilterList),
                                   fileName.__repr__(),
-                                  outputFilePart.__repr__())
+                                  outputFilePart.__repr__(),
+                                  videoArgs,
+                                  audioArgs)
             subprocessDict = self.runSubprocess(args)
-            if subprocessDict['returncode'] != 0:
-                with open('{}.first_run_error'.format(logFile), 'w',
-                          encoding='utf-8') as f:
-                    f.write('{}\n\n{}'.format(args,
-                                              subprocessDict['stderrData']))
-                args = ('ffmpeg -i {0} -filter:v {1} -map 0 -c:v libx265 '
-                        '-preset medium -x265-params crf=23 -c:s copy '
-                        '-metadata title={2} -y -f matroska '
-                        '{3}').format(inputFile.__repr__(),
-                                      ','.join(videoFilterList),
-                                      fileName.__repr__(),
-                                      outputFilePart.__repr__())
-                subprocessDict = self.runSubprocess(args)
 
         if subprocessDict['returncode'] != 0:
             with open('{}.error'.format(logFile), 'w', encoding='utf-8') as f:
@@ -238,7 +233,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(prog='avtc.py',
                                      description='Audio Video Transcoder',
-                                     epilog=('Copyright 2013-2015 '
+                                     epilog=('Copyright 2013-2016 '
                                              'Curtis Lee Bolin '
                                              '<CurtisLeeBolin@gmail.com>'))
     parser.add_argument('-f', '--filelist', dest='fileList',
