@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2016 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2017 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,10 +32,9 @@ import re
 class AvtcCommon:
     # list of file extentions to find
     fileExtList = [
-        '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
-        'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts',
-        'nuv', 'ogg', 'ogm', 'ogv', 'rm', 'rmvb', 'vob', 'webm',
-        'wmv'
+        '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
+        'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv', 'ogg', 'ogm', 'ogv',
+        'rm', 'rmvb', 'vob', 'webm', 'wmv'
         ]
 
     inputDir = '0in'
@@ -95,29 +94,73 @@ class AvtcCommon:
 
         args = 'ffmpeg -i {}'.format(inputFile.__repr__())
         subprocessDict = self.runSubprocess(args)
+        stderrData = subprocessDict['stderrData']
 
-        durationList = re.findall('Duration: (.*?),',
-                                  subprocessDict['stderrData'])
+        streamList = re.findall('Stream #0:(.*?)\n', stderrData)
+        mapList = []
+        videoList = []
+        audioList = []
+        subtitleList = []
+        videoStreamNumber = 0
+        audioStreamNumber = 0
+        subtitleStreamNumber = 0
+        for stream in streamList:
+            if 'Video' in stream:
+                if not 'mjpeg' in stream:
+                    result = re.findall('^\d*', stream)
+                    mapList.append('-map 0:{}'.format(result[0]))
+                    if 'h265' in stream:
+                        videoList.append('-c:v:{} '
+                                         'copy'.format(videoStreamNumber))
+                    else:
+                        videoList.append('-c:v:{} '
+                                         'libx265'.format(videoStreamNumber))
+                    videoStreamNumber = videoStreamNumber + 1
+            elif 'Audio' in stream:
+                result = re.findall('^\d*', stream)
+                mapList.append('-map 0:{}'.format(result[0]))
+                if 'opus' in stream:
+                    audioList.append('-c:a:{} copy'.format(audioStreamNumber))
+                else:
+                    audioBitRate = "256k"
+                    if re.search('mono', stream) != None:
+                        audioBitRate = "48k"
+                    elif re.search('(stereo|downmix)', stream) != None:
+                        audioBitRate = "96k"
+                    elif re.search('(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
+                                   stream) != None:
+                        audioBitRate = "128k"
+                    elif re.search('(6.1,7.0,7.1,octagonal,'
+                                   'hexadecagonal)', stream) != None:
+                        audioBitRate = "256k"
+                    audioList.append('-filter:a:{0} aformat=channel_layouts="'
+                                     '7.1|5.1|stereo|mono" -c:a:{0} libopus '
+                                     '-b:a:{0} {1}'.format(audioStreamNumber,
+                                                           audioBitRate))
+                audioStreamNumber = audioStreamNumber + 1
+            elif 'Subtitle' in stream:
+                result = re.findall('^\d*', stream)
+                mapList.append('-map 0:{}'.format(result[0]))
+                if re.search('(srt|ssa|subrip)', stream) != None:
+                    subtitleList.append('-c:s:{} '
+                                        'ass'.format(subtitleStreamNumber))
+                else:
+                    subtitleList.append('-c:s:{} '
+                                        'copy'.format(subtitleStreamNumber))
+                subtitleStreamNumber = subtitleStreamNumber + 1
+        mapArgs = ' '.join(mapList)
+        videoArgs = ' '.join(videoList)
+        audioArgs = ' '.join(audioList)
+        subtitleArgs = ' '.join(subtitleList)
+
+        durationList = re.findall('Duration: (.*?),', stderrData)
         duration = 'N/A'
         durationSplitList = None
         if durationList:
             duration = durationList[-1]
             durationSplitList = duration.split(':')
 
-        audioCodecList = re.findall('Audio: (.*?),',
-                                    subprocessDict['stderrData'])
-        audioCodec = ''
-        if audioCodecList:
-            audioCodec = audioCodecList[-1]
-
-        videoCodecList = re.findall('Video: (.*?),',
-                                    subprocessDict['stderrData'])
-        videoCodec = ''
-        if videoCodecList:
-            videoCodec = videoCodecList[-1]
-
-        resolution = re.findall('Video: .*? (\d\d+x\d+)',
-                                subprocessDict['stderrData'])[0]
+        resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
         if resolution[-1] == ',':
             resolution = resolution[:-1]
         resolutionList = resolution.split('x')
@@ -157,15 +200,16 @@ class AvtcCommon:
                                 ','.join(cropDetectVideoFilterList),
                                 os.devnull)
         subprocessDict = self.runSubprocess(args)
+        stderrData = subprocessDict['stderrData']
 
         timeCompletedCrop = int(time.time()) - timeStarted
         self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'),
                       datetime.timedelta(seconds=timeCompletedCrop)))
 
         with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
-            f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
+            f.write('{}\n\n{}'.format(args, stderrData))
         self.printLog('{} Duration: {}'.format(timeSpace, duration))
-        crop = re.findall('crop=(.*?)\n', subprocessDict['stderrData'])[-1]
+        crop = re.findall('crop=(.*?)\n', stderrData)[-1]
         cropList = crop.split(':')
         w = int(cropList[0])
         h = int(cropList[1])
@@ -179,45 +223,20 @@ class AvtcCommon:
         timeStartTranscoding = int(time.time())
         self.printLog('{} Transcoding Started'.format(timeSpace))
 
-        videoArgs = '-c:v libx265 -preset medium -x265-params crf=23'
-        if 'h265' in videoCodec:
-            videoArgs = '-c:v copy'
-
-        audioArgs = ''
-        if 'vorbis' in audioCodec:
-            audioArgs = '-c:a copy'
-
-        args = ('ffmpeg -i {0} -filter:v {1} -map 0 {4} {5}'
-                '-metadata title={2} -y -f matroska '
-                '{3}').format(inputFile.__repr__(),
-                              ','.join(videoFilterList),
-                              fileName.__repr__(),
-                              outputFilePart.__repr__(),
-                              videoArgs,
-                              audioArgs)
+        args = ('ffmpeg -i {} -filter:v {} {} {} {} {} '
+                '-metadata title={} -y -f matroska '
+                '{}').format(inputFile.__repr__(), ','.join(videoFilterList),
+                              mapArgs, videoArgs, audioArgs, subtitleArgs,
+                              fileName.__repr__(), outputFilePart.__repr__())
         subprocessDict = self.runSubprocess(args)
-        if subprocessDict['returncode'] != 0:
-            with open('{}.first_run_error'.format(logFile), 'w',
-                      encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args,
-                                          subprocessDict['stderrData']))
-            args = ('ffmpeg -i {0} -filter:v {1} -map 0 {4} {5} -c:s copy '
-                    '-metadata title={2} -y -f matroska '
-                    '{3}').format(inputFile.__repr__(),
-                                  ','.join(videoFilterList),
-                                  fileName.__repr__(),
-                                  outputFilePart.__repr__(),
-                                  videoArgs,
-                                  audioArgs)
-            subprocessDict = self.runSubprocess(args)
-
+        stderrData = subprocessDict['stderrData']
         if subprocessDict['returncode'] != 0:
             with open('{}.error'.format(logFile), 'w', encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
+                f.write('{}\n\n{}'.format(args, stderrData))
         else:
             with open('{}.transcode'.format(logFile), 'w',
                       encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args, subprocessDict['stderrData']))
+                f.write('{}\n\n{}'.format(args, stderrData))
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
         self.printLog(('{} Transcoding completed in '
                        '{}\n').format(time.strftime('%X'),
@@ -233,8 +252,8 @@ if __name__ == '__main__':
         os.nice(19)
 
     parser = argparse.ArgumentParser(prog='avtc.py',
-                                     description='Audio Video Transcoder',
-                                     epilog=('Copyright 2013-2016 '
+                                     description='Audio Video TransCoder',
+                                     epilog=('Copyright 2013-2017 '
                                              'Curtis Lee Bolin '
                                              '<CurtisLeeBolin@gmail.com>'))
     parser.add_argument('-f', '--filelist', dest='fileList',
