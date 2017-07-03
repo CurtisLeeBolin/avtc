@@ -51,9 +51,7 @@ $ avtc
          Output Resolution: 720x480
          Transcoding Started
 19:20:04 Transcoding completed in 0:02:57
-```
 
-```
 19:20:04 Analyzing '2012 Vacation: Volcano'
 19:20:05 Analysis completed in 0:00:01
          Duration: 00:05:00.06
