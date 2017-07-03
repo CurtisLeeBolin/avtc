@@ -1,19 +1,20 @@
 avtc
 ====
-__A__udio __V__ideo __T__rans__C__oder - Batch transcodes Audio Video files to H.265/Vorbis/ASS/Matroska.
 
-Copyright 2013-2015 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+**A**udio **V**ideo **T**rans**C**oder - Batch transcodes Audio Video files to HEVC/Opus/ASS/Matroska.
+
+Copyright 2013-2017 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
 
 ### Getting Started and Example Run
 
-* Download avtc.py wherever you like. I stored it in `~/Projects/github/avtc/`.
+* Download avtc.py wherever you like. I stored it in `~/Projects/avtc/`.
 * Put a symbolic link somewhere in your $PATH.  I chose `~/.local/bin/`.
 
 ```
-ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
+ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 ```
 
 * View Help
@@ -22,7 +23,7 @@ ln -s ~/Projects/github/avtc/avtc.py ~/.local/bin/avtc
 $ avtc --help
 usage: avtc.py [-h] [-f FILELIST] [-d DIRECTORY] [--deinterlace] [--scale720p]
 
-Audio Video Transcoder
+Audio Video TransCoder
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -34,7 +35,7 @@ optional arguments:
   --deinterlace         Deinterlace Videos.
   --scale720p           Scale Videos to 720p.
 
-Copyright 2013-2015 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2017 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
 * Change to the videos directory you want to transcode.
@@ -62,7 +63,7 @@ $ avtc
 19:25:07 Transcoding completed in 0:05:02
 ```
 
-* Input files are be stored in directory `0in`
+* Input files are stored in directory `0in`
 
 ```
 $ ls -1sh 0in/
@@ -93,8 +94,8 @@ total 240K
 ```
 
 ### Output Format
-* Video: H.265
-* Audio: Vorbis
-* Subtitles: ASS (text subtitles) or Copied From Source (image subtitles)
-* Container: Matroska
+* Video: HEVC (a.k.a. H.265 and MPEG-H Part 2)
+* Audio: Opus
+* Subtitles: ASS (text subtitles) or Copied from Source (image subtitles)
 * Metadata: `title` is set to the filename minus the file extension
+* Container: Matroska
