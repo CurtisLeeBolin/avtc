@@ -109,7 +109,7 @@ class AvtcCommon:
                 if not 'mjpeg' in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if 'h265' in stream:
+                    if re.search('(h265|hevc)', stream) != None:
                         videoList.append('-c:v:{} '
                                          'copy'.format(videoStreamNumber))
                     else:
