@@ -96,6 +96,7 @@ class AvtcCommon:
         subprocessDict = self.runSubprocess(args)
         stderrData = subprocessDict['stderrData']
 
+        videoCopy = False
         streamList = re.findall('Stream #0:(.*?)\n', stderrData)
         mapList = []
         videoList = []
@@ -109,9 +110,10 @@ class AvtcCommon:
                 if not 'mjpeg' in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if 'h265' in stream:
+                    if re.search('(h265|hevc)', stream) != None:
                         videoList.append('-c:v:{} '
                                          'copy'.format(videoStreamNumber))
+                        videoCopy = True
                     else:
                         videoList.append('-c:v:{} '
                                          'libx265'.format(videoStreamNumber))
@@ -141,7 +143,7 @@ class AvtcCommon:
             elif 'Subtitle' in stream:
                 result = re.findall('^\d*', stream)
                 mapList.append('-map 0:{}'.format(result[0]))
-                if re.search('(srt|ssa|subrip)', stream) != None:
+                if re.search('(srt|ssa|subrip|mov_text)', stream) != None:
                     subtitleList.append('-c:s:{} '
                                         'ass'.format(subtitleStreamNumber))
                 else:
@@ -153,79 +155,85 @@ class AvtcCommon:
         audioArgs = ' '.join(audioList)
         subtitleArgs = ' '.join(subtitleList)
 
-        durationList = re.findall('Duration: (.*?),', stderrData)
-        duration = 'N/A'
-        durationSplitList = None
-        if durationList:
-            duration = durationList[-1]
-            durationSplitList = duration.split(':')
+        if not videoCopy:
+            durationList = re.findall('Duration: (.*?),', stderrData)
+            duration = 'N/A'
+            durationSplitList = None
+            if durationList:
+                duration = durationList[-1]
+                durationSplitList = duration.split(':')
 
-        resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
-        if resolution[-1] == ',':
-            resolution = resolution[:-1]
-        resolutionList = resolution.split('x')
-        input_w = int(resolutionList[0])
-        input_h = int(resolutionList[1])
+            resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
+            if resolution[-1] == ',':
+                resolution = resolution[:-1]
+            resolutionList = resolution.split('x')
+            input_w = int(resolutionList[0])
+            input_h = int(resolutionList[1])
 
-        videoFilterList = []
-        if deinterlace:
-            videoFilterList.append('yadif=0:-1:0')
-        if scale720p:
-            if input_w > 1280 or input_h > 720:
-                videoFilterList.append('scale=1280:-1')
-                self.printLog(('{} Above 720p: Scaling '
-                               'Enabled').format(timeSpace))
+            videoFilterList = []
+            if deinterlace:
+                videoFilterList.append('yadif=0:-1:0')
+            if scale720p:
+                if input_w > 1280 or input_h > 720:
+                    videoFilterList.append('scale=1280:-1')
+                    self.printLog(('{} Above 720p: Scaling '
+                                   'Enabled').format(timeSpace))
+                else:
+                    self.printLog(('{} Not Above 720p: Scaling '
+                                   'Disabled').format(timeSpace))
+
+            if duration != 'N/A':
+                durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
+                               int(durationSplitList[1]) +
+                               float(durationSplitList[2]))
+                cropDetectStart = str(datetime.timedelta(
+                                      seconds=(durationSec / 10)))
+                cropDetectDuration = str(datetime.timedelta(
+                                         seconds=(durationSec / 100)))
             else:
-                self.printLog(('{} Not Above 720p: Scaling '
-                               'Disabled').format(timeSpace))
+                cropDetectStart = '0'
+                cropDetectDuration = '60'
 
-        if duration != 'N/A':
-            durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
-                           int(durationSplitList[1]) +
-                           float(durationSplitList[2]))
-            cropDetectStart = str(datetime.timedelta(
-                                  seconds=(durationSec / 10)))
-            cropDetectDuration = str(datetime.timedelta(
-                                     seconds=(durationSec / 100)))
+            cropDetectVideoFilterList = list(videoFilterList)
+            cropDetectVideoFilterList.append('cropdetect')
+
+            cropDetectVideoFilterArgs = '-filter:v ' + ','.join(cropDetectVideoFilterList)
+
+            args = ('ffmpeg -i {} -ss {} -t {} {} -an -sn -f rawvideo '
+                    '-y {}').format(inputFile.__repr__(), cropDetectStart,
+                                    cropDetectDuration,
+                                    cropDetectVideoFilterArgs,
+                                    os.devnull)
+            subprocessDict = self.runSubprocess(args)
+            stderrData = subprocessDict['stderrData']
+
+            timeCompletedCrop = int(time.time()) - timeStarted
+            self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'),
+                          datetime.timedelta(seconds=timeCompletedCrop)))
+
+            with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
+                f.write('{}\n\n{}'.format(args, stderrData))
+            self.printLog('{} Duration: {}'.format(timeSpace, duration))
+            crop = re.findall('crop=(.*?)\n', stderrData)[-1]
+            cropList = crop.split(':')
+            w = int(cropList[0])
+            h = int(cropList[1])
+
+            self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace,
+                          input_w, input_h))
+            self.printLog('{} Output Resolution: {}x{}'.format(timeSpace, w, h))
+
+            videoFilterList.append('crop={}'.format(crop))
+            videoFilterArgs = '-filter:v ' + ','.join(videoFilterList)
         else:
-            cropDetectStart = '0'
-            cropDetectDuration = '60'
-
-        cropDetectVideoFilterList = list(videoFilterList)
-        cropDetectVideoFilterList.append('cropdetect')
-
-        args = ('ffmpeg -i {} -ss {} -t {} -filter:v {} -an -sn -f rawvideo '
-                '-y {}').format(inputFile.__repr__(), cropDetectStart,
-                                cropDetectDuration,
-                                ','.join(cropDetectVideoFilterList),
-                                os.devnull)
-        subprocessDict = self.runSubprocess(args)
-        stderrData = subprocessDict['stderrData']
-
-        timeCompletedCrop = int(time.time()) - timeStarted
-        self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'),
-                      datetime.timedelta(seconds=timeCompletedCrop)))
-
-        with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
-            f.write('{}\n\n{}'.format(args, stderrData))
-        self.printLog('{} Duration: {}'.format(timeSpace, duration))
-        crop = re.findall('crop=(.*?)\n', stderrData)[-1]
-        cropList = crop.split(':')
-        w = int(cropList[0])
-        h = int(cropList[1])
-
-        self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace,
-                      input_w, input_h))
-        self.printLog('{} Output Resolution: {}x{}'.format(timeSpace, w, h))
-
-        videoFilterList.append('crop={}'.format(crop))
+            videoFilterArgs = ''
 
         timeStartTranscoding = int(time.time())
         self.printLog('{} Transcoding Started'.format(timeSpace))
 
-        args = ('ffmpeg -i {} -filter:v {} {} {} {} {} '
+        args = ('ffmpeg -i {} {} {} {} {} {} '
                 '-metadata title={} -y -f matroska '
-                '{}').format(inputFile.__repr__(), ','.join(videoFilterList),
+                '{}').format(inputFile.__repr__(), videoFilterArgs,
                               mapArgs, videoArgs, audioArgs, subtitleArgs,
                               fileName.__repr__(), outputFilePart.__repr__())
         subprocessDict = self.runSubprocess(args)
