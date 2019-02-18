@@ -233,6 +233,7 @@ class AvtcCommon:
 
         args = ('ffmpeg -i {} {} {} {} {} {} '
                 '-metadata title={} -y -f matroska '
+                '-max_muxing_queue_size 1024 '
                 '{}').format(inputFile.__repr__(), videoFilterArgs,
                               mapArgs, videoArgs, audioArgs, subtitleArgs,
                               fileName.__repr__(), outputFilePart.__repr__())
