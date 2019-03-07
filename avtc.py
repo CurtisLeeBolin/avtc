@@ -175,7 +175,7 @@ class AvtcCommon:
                 videoFilterList.append('yadif=0:-1:0')
             if scale720p:
                 if input_w > 1280 or input_h > 720:
-                    videoFilterList.append('scale=1280:-1')
+                    videoFilterList.append('scale=1280:-2')
                     self.printLog(('{} Above 720p: Scaling '
                                    'Enabled').format(timeSpace))
                 else:
