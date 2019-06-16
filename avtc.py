@@ -110,13 +110,13 @@ class AvtcCommon:
                 if not 'mjpeg' in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if re.search('(h265|hevc)', stream) != None:
+                    if re.search('(h265|hevc)', stream) != None and re.search('(yuv420p10le|yuv420p12le)', stream) == None:
                         videoList.append('-c:v:{} '
                                          'copy'.format(videoStreamNumber))
                         videoCopy = True
                     else:
-                        videoList.append('-c:v:{} '
-                                         'libx265'.format(videoStreamNumber))
+                        videoList.append('-c:v:{0} '
+                                         'libx265 -profile:v:{0} main-intra -pix_fmt:v:{0} yuv420p'.format(videoStreamNumber))
                     videoStreamNumber = videoStreamNumber + 1
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
