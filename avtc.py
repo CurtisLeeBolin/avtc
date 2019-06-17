@@ -116,7 +116,7 @@ class AvtcCommon:
                         videoCopy = True
                     else:
                         videoList.append('-c:v:{0} '
-                                         'libx265 -profile:v:{0} main-intra -pix_fmt:v:{0} yuv420p'.format(videoStreamNumber))
+                                         'libx265 -profile:v:{0} main -pix_fmt:v:{0} yuv420p'.format(videoStreamNumber))
                     videoStreamNumber = videoStreamNumber + 1
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
