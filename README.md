@@ -21,21 +21,25 @@ ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 
 ```
 $ avtc --help
-usage: avtc.py [-h] [-f FILELIST] [-d DIRECTORY] [--deinterlace] [--scale720p]
+usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [--scale720p]
+               [-t]
 
 Audio Video TransCoder
 
 optional arguments:
   -h, --help            show this help message and exit
+  --deinterlace         Deinterlace Videos.
+  -d DIRECTORY, --directory DIRECTORY
+                        A directory
   -f FILELIST, --filelist FILELIST
                         A comma separated list of files in the current
                         directory
-  -d DIRECTORY, --directory DIRECTORY
-                        A directory
-  --deinterlace         Deinterlace Videos.
   --scale720p           Scale Videos to 720p.
+  -t, --transcode-force
+                        Force file/s to be transcoded.
 
-Copyright 2013-2017 Curtis lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2019 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+
 ```
 
 * Change to the videos directory you want to transcode.

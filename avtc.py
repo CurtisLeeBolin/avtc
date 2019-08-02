@@ -42,13 +42,13 @@ class AvtcCommon:
     logDir = '0log'
 
     def __init__(self, fileList, workingDir, deinterlace=False,
-                 scale720p=False):
+                 scale720p=False, transcode_force=False):
         self.mkIODirs(workingDir)
         for f in fileList:
             if os.path.isfile(f):
                 fileName, fileExtension = os.path.splitext(f)
                 if self.checkFileType(fileExtension):
-                    self.transcode(f, fileName, deinterlace, scale720p)
+                    self.transcode(f, fileName, deinterlace, scale720p, transcode_force)
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -80,7 +80,7 @@ class AvtcCommon:
             if not os.path.exists(dir):
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
-    def transcode(self, f, fileName, deinterlace, scale720p):
+    def transcode(self, f, fileName, deinterlace, scale720p, transcode_force):
         inputFile = '{}/{}'.format(self.inputDir, f)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
@@ -92,8 +92,8 @@ class AvtcCommon:
                                                fileName.__repr__()))
         timeStarted = int(time.time())
 
-        args = 'ffmpeg -i {}'.format(inputFile.__repr__())
-        subprocessDict = self.runSubprocess(args)
+        transcodeArgs = 'ffmpeg -i {}'.format(inputFile.__repr__())
+        subprocessDict = self.runSubprocess(transcodeArgs)
         stderrData = subprocessDict['stderrData']
 
         videoCopy = False
@@ -110,7 +110,7 @@ class AvtcCommon:
                 if not 'mjpeg' in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if re.search('(h265|hevc)', stream) != None and re.search('(yuv420p10le|yuv420p12le)', stream) == None:
+                    if not transcode_force and re.search('(h265|hevc)', stream) != None and re.search('(yuv420p10le|yuv420p12le)', stream) == None:
                         videoList.append('-c:v:{} '
                                          'copy'.format(videoStreamNumber))
                         videoCopy = True
@@ -124,17 +124,17 @@ class AvtcCommon:
                 if 'opus' in stream:
                     audioList.append('-c:a:{} copy'.format(audioStreamNumber))
                 else:
-                    audioBitRate = "256k"
+                    audioBitRate = '256k'
                     if re.search('mono', stream) != None:
-                        audioBitRate = "48k"
+                        audioBitRate = '48k'
                     elif re.search('(stereo|downmix)', stream) != None:
-                        audioBitRate = "96k"
+                        audioBitRate = '96k'
                     elif re.search('(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
                                    stream) != None:
-                        audioBitRate = "128k"
+                        audioBitRate = '128k'
                     elif re.search('(6.1,7.0,7.1,octagonal,'
                                    'hexadecagonal)', stream) != None:
-                        audioBitRate = "256k"
+                        audioBitRate = '256k'
                     audioList.append('-filter:a:{0} aformat=channel_layouts="'
                                      '7.1|5.1|stereo|mono" -c:a:{0} libopus '
                                      '-b:a:{0} {1}'.format(audioStreamNumber,
@@ -199,12 +199,12 @@ class AvtcCommon:
 
             cropDetectVideoFilterArgs = '-filter:v ' + ','.join(cropDetectVideoFilterList)
 
-            args = ('ffmpeg -i {} -ss {} -t {} {} -an -sn -f rawvideo '
+            transcodeArgs = ('ffmpeg -i {} -ss {} -t {} {} -an -sn -f rawvideo '
                     '-y {}').format(inputFile.__repr__(), cropDetectStart,
                                     cropDetectDuration,
                                     cropDetectVideoFilterArgs,
                                     os.devnull)
-            subprocessDict = self.runSubprocess(args)
+            subprocessDict = self.runSubprocess(transcodeArgs)
             stderrData = subprocessDict['stderrData']
 
             timeCompletedCrop = int(time.time()) - timeStarted
@@ -212,7 +212,7 @@ class AvtcCommon:
                           datetime.timedelta(seconds=timeCompletedCrop)))
 
             with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args, stderrData))
+                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
             self.printLog('{} Duration: {}'.format(timeSpace, duration))
             crop = re.findall('crop=(.*?)\n', stderrData)[-1]
             cropList = crop.split(':')
@@ -231,21 +231,21 @@ class AvtcCommon:
         timeStartTranscoding = int(time.time())
         self.printLog('{} Transcoding Started'.format(timeSpace))
 
-        args = ('ffmpeg -i {} {} {} {} {} {} '
+        transcodeArgs = ('ffmpeg -i {} {} {} {} {} {} '
                 '-metadata title={} -y -f matroska '
                 '-max_muxing_queue_size 1024 '
                 '{}').format(inputFile.__repr__(), videoFilterArgs,
                               mapArgs, videoArgs, audioArgs, subtitleArgs,
                               fileName.__repr__(), outputFilePart.__repr__())
-        subprocessDict = self.runSubprocess(args)
+        subprocessDict = self.runSubprocess(transcodeArgs)
         stderrData = subprocessDict['stderrData']
         if subprocessDict['returncode'] != 0:
             with open('{}.error'.format(logFile), 'w', encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args, stderrData))
+                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
         else:
             with open('{}.transcode'.format(logFile), 'w',
                       encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(args, stderrData))
+                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
         self.printLog(('{} Transcoding completed in '
                        '{}\n').format(time.strftime('%X'),
@@ -260,25 +260,28 @@ if __name__ == '__main__':
     if os.name == 'posix':
         os.nice(19)
 
-    parser = argparse.ArgumentParser(prog='avtc.py',
-                                     description='Audio Video TransCoder',
-                                     epilog=('Copyright 2013-2017 '
-                                             'Curtis Lee Bolin '
-                                             '<CurtisLeeBolin@gmail.com>'))
-    parser.add_argument('-f', '--filelist', dest='fileList',
-                        help=('A comma separated list of files in the current '
-                              'directory'))
-    parser.add_argument('-d', '--directory', dest='directory',
-                        help='A directory')
-    parser.add_argument('--deinterlace', help='Deinterlace Videos.',
-                        action="store_true")
-    parser.add_argument('--scale720p', help='Scale Videos to 720p.',
-                        action="store_true")
+    parser = argparse.ArgumentParser(
+        prog='avtc.py',
+        description='Audio Video TransCoder',
+        epilog=(
+            'Copyright 2013-2019 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+    parser.add_argument(
+        '--deinterlace', help='Deinterlace Videos.', action='store_true')
+    parser.add_argument(
+        '-d', '--directory', dest='directory', help='A directory')
+    parser.add_argument(
+        '-f', '--filelist', dest='fileList', help=(
+            'A comma separated list of files in the current directory'))
+    parser.add_argument(
+        '--scale720p', help='Scale Videos to 720p.', action='store_true')
+    parser.add_argument(
+        '-t', '--transcode-force', help='Force file/s to be transcoded.',
+        action='store_true')
     args = parser.parse_args()
 
     if (args.fileList and args.directory):
         print(('Arguments -f (--filelist) and -d (--directory) can not be '
-               'used together.'))
+            'used together.'))
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -292,4 +295,4 @@ if __name__ == '__main__':
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale720p)
+    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale720p, args.transcode_force)
