@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2017 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2019 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -172,7 +172,7 @@ class AvtcCommon:
 
             videoFilterList = []
             if deinterlace:
-                videoFilterList.append('yadif=0:-1:0')
+                videoFilterList.append('bwdif')
             if scale720p:
                 if input_w > 1280 or input_h > 720:
                     videoFilterList.append('scale=1280:-2')
