@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2019 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -42,13 +42,13 @@ class AvtcCommon:
     logDir = '0log'
 
     def __init__(self, fileList, workingDir, deinterlace=False,
-                 scale720p=False, transcode_force=False):
+                 scale='no', transcode_force=False):
         self.mkIODirs(workingDir)
         for f in fileList:
             if os.path.isfile(f):
                 fileName, fileExtension = os.path.splitext(f)
                 if self.checkFileType(fileExtension):
-                    self.transcode(f, fileName, deinterlace, scale720p, transcode_force)
+                    self.transcode(f, fileName, deinterlace, scale, transcode_force)
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -80,7 +80,7 @@ class AvtcCommon:
             if not os.path.exists(dir):
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
-    def transcode(self, f, fileName, deinterlace, scale720p, transcode_force):
+    def transcode(self, f, fileName, deinterlace, scale, transcode_force):
         inputFile = '{}/{}'.format(self.inputDir, f)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
@@ -110,13 +110,11 @@ class AvtcCommon:
                 if not 'mjpeg' in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if not transcode_force and re.search('(h265|hevc)', stream) != None and re.search('(yuv420p10le|yuv420p12le)', stream) == None:
-                        videoList.append('-c:v:{} '
-                                         'copy'.format(videoStreamNumber))
+                    if not transcode_force and re.search('(h265|hevc)', stream) != None:
+                        videoList.append('-c:v:{} copy'.format(videoStreamNumber))
                         videoCopy = True
                     else:
-                        videoList.append('-c:v:{0} '
-                                         'libx265 -profile:v:{0} main -pix_fmt:v:{0} yuv420p'.format(videoStreamNumber))
+                        videoList.append('-c:v:{0} libx265'.format(videoStreamNumber))
                     videoStreamNumber = videoStreamNumber + 1
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
@@ -173,13 +171,21 @@ class AvtcCommon:
             videoFilterList = []
             if deinterlace:
                 videoFilterList.append('bwdif')
-            if scale720p:
+            if scale == '720p':
                 if input_w > 1280 or input_h > 720:
                     videoFilterList.append('scale=1280:-2')
                     self.printLog(('{} Above 720p: Scaling '
                                    'Enabled').format(timeSpace))
                 else:
                     self.printLog(('{} Not Above 720p: Scaling '
+                                   'Disabled').format(timeSpace))
+            if scale == '1080p':
+                if input_w > 1920 or input_h > 1080:
+                    videoFilterList.append('scale=1920:-2')
+                    self.printLog(('{} Above 1080p: Scaling '
+                                   'Enabled').format(timeSpace))
+                else:
+                    self.printLog(('{} Not Above 1080p: Scaling '
                                    'Disabled').format(timeSpace))
 
             if duration != 'N/A':
@@ -232,7 +238,7 @@ class AvtcCommon:
         self.printLog('{} Transcoding Started'.format(timeSpace))
 
         transcodeArgs = ('ffmpeg -i {} {} {} {} {} {} '
-                '-metadata title={} -y -f matroska '
+                '-map_metadata -1 -metadata title={} -y -f matroska '
                 '-max_muxing_queue_size 1024 '
                 '{}').format(inputFile.__repr__(), videoFilterArgs,
                               mapArgs, videoArgs, audioArgs, subtitleArgs,
@@ -264,7 +270,7 @@ if __name__ == '__main__':
         prog='avtc.py',
         description='Audio Video TransCoder',
         epilog=(
-            'Copyright 2013-2019 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+            'Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
     parser.add_argument(
         '--deinterlace', help='Deinterlace Videos.', action='store_true')
     parser.add_argument(
@@ -273,7 +279,7 @@ if __name__ == '__main__':
         '-f', '--filelist', dest='fileList', help=(
             'A comma separated list of files in the current directory'))
     parser.add_argument(
-        '--scale720p', help='Scale Videos to 720p.', action='store_true')
+        '--scale', dest='scale', help='Scale Videos to 720p or 1080p.')
     parser.add_argument(
         '-t', '--transcode-force', help='Force file/s to be transcoded.',
         action='store_true')
@@ -282,6 +288,9 @@ if __name__ == '__main__':
     if (args.fileList and args.directory):
         print(('Arguments -f (--filelist) and -d (--directory) can not be '
             'used together.'))
+        exit(1)
+    elif (not args.scale in ['720p', '1080p']):
+        print(('Argument --scale only accepts strings 720p or 1080p'))
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -295,4 +304,4 @@ if __name__ == '__main__':
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale720p, args.transcode_force)
+    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale, args.transcode_force)
