@@ -42,13 +42,14 @@ class AvtcCommon:
     logDir = '0log'
 
     def __init__(self, fileList, workingDir, deinterlace=False,
-                 scale='no', transcode_force=False):
+                 scale=None, transcode_force=False):
         self.mkIODirs(workingDir)
         for f in fileList:
             if os.path.isfile(f):
                 fileName, fileExtension = os.path.splitext(f)
                 if self.checkFileType(fileExtension):
-                    self.transcode(f, fileName, deinterlace, scale, transcode_force)
+                    self.transcode(f, fileName, deinterlace, scale,
+                                   transcode_force)
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -107,14 +108,17 @@ class AvtcCommon:
         subtitleStreamNumber = 0
         for stream in streamList:
             if 'Video' in stream:
-                if not 'mjpeg' in stream:
+                if 'mjpeg' not in stream:
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
-                    if not transcode_force and re.search('(h265|hevc)', stream) != None:
-                        videoList.append('-c:v:{} copy'.format(videoStreamNumber))
+                    if not transcode_force and re.search('(h265|hevc)',
+                                                         stream) is not None:
+                        videoList.append('-c:v:{} '
+                                         'copy'.format(videoStreamNumber))
                         videoCopy = True
                     else:
-                        videoList.append('-c:v:{0} libx265'.format(videoStreamNumber))
+                        videoList.append('-c:v:{0} '
+                                         'libx265'.format(videoStreamNumber))
                     videoStreamNumber = videoStreamNumber + 1
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
@@ -123,15 +127,15 @@ class AvtcCommon:
                     audioList.append('-c:a:{} copy'.format(audioStreamNumber))
                 else:
                     audioBitRate = '256k'
-                    if re.search('mono', stream) != None:
+                    if re.search('mono', stream) is not None:
                         audioBitRate = '48k'
-                    elif re.search('(stereo|downmix)', stream) != None:
+                    elif re.search('(stereo|downmix)', stream) is not None:
                         audioBitRate = '96k'
                     elif re.search('(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
-                                   stream) != None:
+                                   stream) is not None:
                         audioBitRate = '128k'
                     elif re.search('(6.1,7.0,7.1,octagonal,'
-                                   'hexadecagonal)', stream) != None:
+                                   'hexadecagonal)', stream) is not None:
                         audioBitRate = '256k'
                     audioList.append('-filter:a:{0} aformat=channel_layouts="'
                                      '7.1|5.1|stereo|mono" -c:a:{0} libopus '
@@ -141,7 +145,7 @@ class AvtcCommon:
             elif 'Subtitle' in stream:
                 result = re.findall('^\d*', stream)
                 mapList.append('-map 0:{}'.format(result[0]))
-                if re.search('(srt|ssa|subrip|mov_text)', stream) != None:
+                if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
                     subtitleList.append('-c:s:{} '
                                         'ass'.format(subtitleStreamNumber))
                 else:
@@ -205,17 +209,20 @@ class AvtcCommon:
 
             cropDetectVideoFilterArgs = '-filter:v ' + ','.join(cropDetectVideoFilterList)
 
-            transcodeArgs = ('ffmpeg -i {} -ss {} -t {} {} -an -sn -f rawvideo '
-                    '-y {}').format(inputFile.__repr__(), cropDetectStart,
-                                    cropDetectDuration,
-                                    cropDetectVideoFilterArgs,
-                                    os.devnull)
+            transcodeArgs = ('ffmpeg -i {} -ss {} -t {} {} '
+                             '-an -sn -f rawvideo '
+                             '-y {}').format(inputFile.__repr__(),
+                                             cropDetectStart,
+                                             cropDetectDuration,
+                                             cropDetectVideoFilterArgs,
+                                             os.devnull)
             subprocessDict = self.runSubprocess(transcodeArgs)
             stderrData = subprocessDict['stderrData']
 
             timeCompletedCrop = int(time.time()) - timeStarted
-            self.printLog('{} Analysis completed in {}'.format(time.strftime('%X'),
-                          datetime.timedelta(seconds=timeCompletedCrop)))
+            self.printLog('{} Analysis completed in '
+                          '{}'.format(time.strftime('%X'),
+                                      datetime.timedelta(seconds=timeCompletedCrop)))
 
             with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
                 f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
@@ -227,7 +234,8 @@ class AvtcCommon:
 
             self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace,
                           input_w, input_h))
-            self.printLog('{} Output Resolution: {}x{}'.format(timeSpace, w, h))
+            self.printLog('{} Output Resolution: '
+                          '{}x{}'.format(timeSpace, w, h))
 
             videoFilterList.append('crop={}'.format(crop))
             videoFilterArgs = '-filter:v ' + ','.join(videoFilterList)
@@ -238,11 +246,13 @@ class AvtcCommon:
         self.printLog('{} Transcoding Started'.format(timeSpace))
 
         transcodeArgs = ('ffmpeg -i {} {} {} {} {} {} '
-                '-map_metadata -1 -metadata title={} -y -f matroska '
-                '-max_muxing_queue_size 1024 '
-                '{}').format(inputFile.__repr__(), videoFilterArgs,
-                              mapArgs, videoArgs, audioArgs, subtitleArgs,
-                              fileName.__repr__(), outputFilePart.__repr__())
+                         '-map_metadata -1 -metadata title={} -y -f matroska '
+                         '-max_muxing_queue_size 1024 '
+                         '{}').format(inputFile.__repr__(), videoFilterArgs,
+                                      mapArgs, videoArgs,
+                                      audioArgs, subtitleArgs,
+                                      fileName.__repr__(),
+                                      outputFilePart.__repr__())
         subprocessDict = self.runSubprocess(transcodeArgs)
         stderrData = subprocessDict['stderrData']
         if subprocessDict['returncode'] != 0:
@@ -287,9 +297,9 @@ if __name__ == '__main__':
 
     if (args.fileList and args.directory):
         print(('Arguments -f (--filelist) and -d (--directory) can not be '
-            'used together.'))
+               'used together.'))
         exit(1)
-    elif (not args.scale in ['720p', '1080p']):
+    elif (args.scale not in [None, '720p', '1080p']):
         print(('Argument --scale only accepts strings 720p or 1080p'))
         exit(1)
     elif (args.fileList):
@@ -304,4 +314,8 @@ if __name__ == '__main__':
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale, args.transcode_force)
+    if (args.scale in ['720p', '1080p']):
+        args.transcode_force = True
+
+    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale,
+               args.transcode_force)
