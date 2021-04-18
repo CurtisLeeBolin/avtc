@@ -31,12 +31,11 @@ import re
 
 class AvtcCommon:
     # list of file extentions to find
-    fileExtList = [
-        '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
-        'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv', 'ogg', 'ogm', 'ogv',
-        'rm', 'rmvb', 'vob', 'webm', 'wmv'
-        ]
-
+    fileExtList = [ '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
+                    'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts',
+                    'nuv', 'ogg', 'ogm', 'ogv', 'rm', 'rmvb', 'vob', 'webm',
+                    'wmv']
+    imageTypeList = ['mjpeg', 'png']
     inputDir = '0in'
     outputDir = '0out'
     logDir = '0log'
@@ -59,6 +58,12 @@ class AvtcCommon:
                 result = True
                 break
         return result
+
+    def checkForImage(self, videoString):
+        for each in self.imageTypeList:
+            if each in videoString:
+                return True
+        return False
 
     def runSubprocess(self, args):
         p = subprocess.Popen(shlex.split(args), stderr=subprocess.PIPE)
@@ -108,7 +113,7 @@ class AvtcCommon:
         subtitleStreamNumber = 0
         for stream in streamList:
             if 'Video' in stream:
-                if 'mjpeg' not in stream:
+                if not self.checkForImage(stream):
                     result = re.findall('^\d*', stream)
                     mapList.append('-map 0:{}'.format(result[0]))
                     if not transcode_force and re.search('(h265|hevc)',
