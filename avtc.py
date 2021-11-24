@@ -22,11 +22,12 @@
 #
 
 import os
-import shlex
 import subprocess
 import time
 import datetime
 import re
+import threading
+import queue
 
 
 class AvtcCommon:
@@ -38,7 +39,6 @@ class AvtcCommon:
     imageTypeList = ['mjpeg', 'png']
     inputDir = '0in'
     outputDir = '0out'
-    logDir = '0log'
 
     def __init__(self, fileList, workingDir, deinterlace=False,
                  scale=None, transcode_force=False):
@@ -66,7 +66,7 @@ class AvtcCommon:
         return False
 
     def runSubprocess(self, args):
-        p = subprocess.Popen(shlex.split(args), stderr=subprocess.PIPE)
+        p = subprocess.Popen(args, stderr=subprocess.PIPE)
         stdoutData, stderrData = p.communicate()
         if stdoutData is not None:
             stdoutData = stdoutData.decode(encoding='utf-8', errors='ignore')
@@ -75,14 +75,8 @@ class AvtcCommon:
         return {'stdoutData': stdoutData, 'stderrData': stderrData,
                 'returncode': p.returncode}
 
-    def printLog(self, s):
-        with open('{}/0transcode.log'.format(self.logDir),
-                  'a', encoding='utf-8') as f:
-            f.write('{}\n'.format(s))
-        print(s)
-
     def mkIODirs(self, workingDir):
-        for dir in [self.inputDir, self.outputDir, self.logDir]:
+        for dir in [self.inputDir, self.outputDir]:
             if not os.path.exists(dir):
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
 
@@ -90,15 +84,14 @@ class AvtcCommon:
         inputFile = '{}/{}'.format(self.inputDir, f)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
-        logFile = '{}/{}'.format(self.logDir, f)
+        errorFile = '{}.error'.format(outputFile)
         timeSpace = '        '
         os.rename(f, inputFile)
 
-        self.printLog('{} Analyzing {}'.format(time.strftime('%X'),
-                                               fileName.__repr__()))
+        print(time.strftime('%X'), ' Analyzing \'', fileName, '\'', sep='')
         timeStarted = int(time.time())
 
-        transcodeArgs = 'ffmpeg -i {}'.format(inputFile.__repr__())
+        transcodeArgs = ['ffmpeg', '-i', inputFile]
         subprocessDict = self.runSubprocess(transcodeArgs)
         stderrData = subprocessDict['stderrData']
 
@@ -115,21 +108,21 @@ class AvtcCommon:
             if 'Video' in stream:
                 if not self.checkForImage(stream):
                     result = re.findall('^\d*', stream)
-                    mapList.append('-map 0:{}'.format(result[0]))
+                    mapList.extend(['-map', '0:{}'.format(result[0])])
                     if not transcode_force and re.search('(h265|hevc)',
                                                          stream) is not None:
-                        videoList.append('-c:v:{} '
-                                         'copy'.format(videoStreamNumber))
+                        videoList.extend(['-c:v:{}'.format(videoStreamNumber),
+                                         'copy'])
                         videoCopy = True
                     else:
-                        videoList.append('-c:v:{0} '
-                                         'libx265'.format(videoStreamNumber))
+                        videoList.extend(['-c:v:{}'.format(videoStreamNumber),
+                                         'libx265'])
                     videoStreamNumber = videoStreamNumber + 1
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
-                mapList.append('-map 0:{}'.format(result[0]))
+                mapList.extend(['-map', '0:{}'.format(result[0])])
                 if 'opus' in stream:
-                    audioList.append('-c:a:{} copy'.format(audioStreamNumber))
+                    audioList.extend(['-c:a:{}'.format(audioStreamNumber), 'copy'])
                 else:
                     audioBitRate = '256k'
                     if re.search('mono', stream) is not None:
@@ -142,25 +135,19 @@ class AvtcCommon:
                     elif re.search('(6.1,7.0,7.1,octagonal,'
                                    'hexadecagonal)', stream) is not None:
                         audioBitRate = '256k'
-                    audioList.append('-filter:a:{0} aformat=channel_layouts="'
-                                     '7.1|5.1|stereo|mono" -c:a:{0} libopus '
-                                     '-b:a:{0} {1}'.format(audioStreamNumber,
-                                                           audioBitRate))
+                    audioList.extend(['-filter:a:{}'.format(audioStreamNumber),
+                                    'aformat=channel_layouts=7.1|5.1|stereo|mono',
+                                    '-c:a:{}'.format(audioStreamNumber),
+                                    'libopus', '-b:a:{}'.format(audioStreamNumber), audioBitRate])
                 audioStreamNumber = audioStreamNumber + 1
             elif 'Subtitle' in stream:
                 result = re.findall('^\d*', stream)
-                mapList.append('-map 0:{}'.format(result[0]))
+                mapList.extend(['-map', '0:{}'.format(result[0])])
                 if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
-                    subtitleList.append('-c:s:{} '
-                                        'ass'.format(subtitleStreamNumber))
+                    subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'ass'])
                 else:
-                    subtitleList.append('-c:s:{} '
-                                        'copy'.format(subtitleStreamNumber))
+                    subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'copy'])
                 subtitleStreamNumber = subtitleStreamNumber + 1
-        mapArgs = ' '.join(mapList)
-        videoArgs = ' '.join(videoList)
-        audioArgs = ' '.join(audioList)
-        subtitleArgs = ' '.join(subtitleList)
 
         if not videoCopy:
             durationList = re.findall('Duration: (.*?),', stderrData)
@@ -177,25 +164,21 @@ class AvtcCommon:
             input_w = int(resolutionList[0])
             input_h = int(resolutionList[1])
 
-            videoFilterList = []
+            videoFilterList = ['-filter:v']
             if deinterlace:
                 videoFilterList.append('bwdif')
             if scale == '720p':
                 if input_w > 1280 or input_h > 720:
                     videoFilterList.append('scale=1280:-2')
-                    self.printLog(('{} Above 720p: Scaling '
-                                   'Enabled').format(timeSpace))
+                    print(timeSpace, 'Above 720p: Scaling Enabled')
                 else:
-                    self.printLog(('{} Not Above 720p: Scaling '
-                                   'Disabled').format(timeSpace))
+                    print(timeSpace, 'Not Above 720p: Scaling Disabled')
             if scale == '1080p':
                 if input_w > 1920 or input_h > 1080:
                     videoFilterList.append('scale=1920:-2')
-                    self.printLog(('{} Above 1080p: Scaling '
-                                   'Enabled').format(timeSpace))
+                    print(timeSpace, 'Above 1080p: Scaling Enabled')
                 else:
-                    self.printLog(('{} Not Above 1080p: Scaling '
-                                   'Disabled').format(timeSpace))
+                    print(timeSpace, 'Not Above 1080p: Scaling Disabled')
 
             if duration != 'N/A':
                 durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
@@ -212,66 +195,88 @@ class AvtcCommon:
             cropDetectVideoFilterList = list(videoFilterList)
             cropDetectVideoFilterList.append('cropdetect')
 
-            cropDetectVideoFilterArgs = '-filter:v ' + ','.join(cropDetectVideoFilterList)
+            transcodeArgs = [
+                'ffmpeg', '-i', inputFile, '-ss', cropDetectStart,
+                '-t', cropDetectDuration
+            ]
+            transcodeArgs.extend(cropDetectVideoFilterList)
+            transcodeArgs.extend([
+                '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull
+            ])
+            transcodeArgs = list(filter(None, transcodeArgs))
 
-            transcodeArgs = ('ffmpeg -i {} -ss {} -t {} {} '
-                             '-an -sn -f rawvideo '
-                             '-y {}').format(inputFile.__repr__(),
-                                             cropDetectStart,
-                                             cropDetectDuration,
-                                             cropDetectVideoFilterArgs,
-                                             os.devnull)
             subprocessDict = self.runSubprocess(transcodeArgs)
             stderrData = subprocessDict['stderrData']
 
             timeCompletedCrop = int(time.time()) - timeStarted
-            self.printLog('{} Analysis completed in '
-                          '{}'.format(time.strftime('%X'),
-                                      datetime.timedelta(seconds=timeCompletedCrop)))
 
-            with open('{}.crop'.format(logFile), 'w', encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
-            self.printLog('{} Duration: {}'.format(timeSpace, duration))
+            print(time.strftime('%X'), 'Analysis completed in',
+                datetime.timedelta(seconds=timeCompletedCrop))
+            print(timeSpace, 'Duration:', duration)
+
             crop = re.findall('crop=(.*?)\n', stderrData)[-1]
             cropList = crop.split(':')
             w = int(cropList[0])
             h = int(cropList[1])
 
-            self.printLog('{} Input  Resolution: {}x{}'.format(timeSpace,
-                          input_w, input_h))
-            self.printLog('{} Output Resolution: '
-                          '{}x{}'.format(timeSpace, w, h))
+            print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h,
+                sep='')
+            print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
 
             videoFilterList.append('crop={}'.format(crop))
-            videoFilterArgs = '-filter:v ' + ','.join(videoFilterList)
         else:
-            videoFilterArgs = ''
+            videoFilterList = []
 
         timeStartTranscoding = int(time.time())
-        self.printLog('{} Transcoding Started'.format(timeSpace))
+        print(timeSpace, 'Transcoding Started')
 
-        transcodeArgs = ('ffmpeg -i {} {} {} {} {} {} '
-                         '-map_metadata -1 -metadata title={} -y -f matroska '
-                         '-max_muxing_queue_size 1024 '
-                         '{}').format(inputFile.__repr__(), videoFilterArgs,
-                                      mapArgs, videoArgs,
-                                      audioArgs, subtitleArgs,
-                                      fileName.__repr__(),
-                                      outputFilePart.__repr__())
-        subprocessDict = self.runSubprocess(transcodeArgs)
-        stderrData = subprocessDict['stderrData']
-        if subprocessDict['returncode'] != 0:
-            with open('{}.error'.format(logFile), 'w', encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
-        else:
-            with open('{}.transcode'.format(logFile), 'w',
-                      encoding='utf-8') as f:
-                f.write('{}\n\n{}'.format(transcodeArgs, stderrData))
+        transcodeArgs = ['ffmpeg', '-v', 'error', '-stats', '-i', inputFile]
+        transcodeArgs.extend(videoFilterList)
+        transcodeArgs.extend(mapList)
+        transcodeArgs.extend(videoList)
+        transcodeArgs.extend(audioList)
+        transcodeArgs.extend(subtitleList)
+        transcodeArgs.extend([
+            '-map_metadata', '-1', '-metadata', 'title={}'.format(fileName),
+            '-max_muxing_queue_size', '1024', '-y', '-f',
+            'matroska', outputFilePart
+        ])
+        transcodeArgs = list(filter(None, transcodeArgs))
+
+        def enqueue_output(out, queue):
+            for line in iter(out.readline, b''):
+                queue.put(line)
+            out.close()
+
+        p = subprocess.Popen(transcodeArgs, stderr=subprocess.PIPE,
+            universal_newlines=True)
+        q = queue.Queue()
+        t = threading.Thread(target=enqueue_output, args=(p.stderr, q))
+        t.daemon = True
+        t.start()
+
+        stderrList = []
+        while True:
+            try:
+                line = q.get(timeout=5)
+                line_str = line[:-1]  # removes newline character at end
+                print(line_str, end='\r', flush=True)
+                stderrList.append(line)
+            except:
+                pass
+            poll = p.poll()
+            if poll is not None:
+                print()
+                if p.returncode != 0:
+                    with open(errorFile, 'w', encoding='utf-8') as f:
+                        f.write('{}\n\n{}'.format(transcodeArgs,
+                            ''.join(stderrList)))
+                break
+
+
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
-        self.printLog(('{} Transcoding completed in '
-                       '{}\n').format(time.strftime('%X'),
-                                      datetime.timedelta(
-                                          seconds=timeCompletedTranscoding)))
+        print(time.strftime('%X'), 'Transcoding completed in',
+            datetime.timedelta(seconds=timeCompletedTranscoding), '\n')
         os.rename(outputFilePart, outputFile)
 
 if __name__ == '__main__':
