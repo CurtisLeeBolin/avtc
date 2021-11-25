@@ -255,12 +255,13 @@ class AvtcCommon:
         t.daemon = True
         t.start()
 
-        stderrList = []
+        stderrList = [None]*20
         while True:
             try:
                 line = q.get(timeout=5)
                 line_str = line[:-1]  # removes newline character at end
                 print(line_str, end='\r', flush=True)
+                stderrList.pop(0)
                 stderrList.append(line)
             except:
                 pass
