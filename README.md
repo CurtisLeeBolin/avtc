@@ -20,6 +20,7 @@ ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 * View Help
 
 ```
+$ avtc --help
 usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [--scale SCALE] [-t]
 
 Audio Video TransCoder
