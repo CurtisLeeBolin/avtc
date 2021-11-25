@@ -20,9 +20,7 @@ ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 * View Help
 
 ```
-$ avtc --help
-usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [--scale720p]
-               [-t]
+usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [--scale SCALE] [-t]
 
 Audio Video TransCoder
 
@@ -32,14 +30,12 @@ optional arguments:
   -d DIRECTORY, --directory DIRECTORY
                         A directory
   -f FILELIST, --filelist FILELIST
-                        A comma separated list of files in the current
-                        directory
-  --scale720p           Scale Videos to 720p.
+                        A comma separated list of files in the current directory
+  --scale SCALE         Scale Videos to 720p or 1080p.
   -t, --transcode-force
                         Force file/s to be transcoded.
 
 Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
-
 ```
 
 * Change to the videos directory you want to transcode.
@@ -48,56 +44,28 @@ Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 ```
 $ avtc
-19:17:07 Analyzing '2012 Vacation: Beach'
-19:17:07 Analysis completed in 0:00:00
-         Duration: 00:03:00.07
-         Input  Resolution: 720x480
-         Output Resolution: 720x480
+00:05:27 Analyzing '2012 Vacation: Beach'
+00:06:13 Analysis completed in 0:00:46
+         Duration: 01:30:31.26
+         Input  Resolution: 1916x796
+         Output Resolution: 1904x784
          Transcoding Started
-19:20:04 Transcoding completed in 0:02:57
+encoded 130219 frames in 4511.67s (28.86 fps), 390.06 kb/s, Avg QP:32.91
+01:21:24 Transcoding completed in 1:15:11 
 
-19:20:04 Analyzing '2012 Vacation: Volcano'
-19:20:05 Analysis completed in 0:00:01
-         Duration: 00:05:00.06
-         Input  Resolution: 720x480
-         Output Resolution: 720x480
+01:21:25 Analyzing '2012 Vacation: Volcano'
+01:22:14 Analysis completed in 0:00:49
+         Duration: 02:01:36.75
+         Input  Resolution: 1920x800
+         Output Resolution: 1920x800
          Transcoding Started
-19:25:07 Transcoding completed in 0:05:02
-```
-
-* Input files are stored in directory `0in`
-
-```
-$ ls -1sh 0in/
-total 49M
- 19M 2012 Vacation: Beach.mkv
- 32M 2012 Vacation: Volcano.mkv
-```
-
-* Transcoded files are stored in directory `0out`
-
-```
-$ ls -1sh 0out/
-total 41M
-15M 2012 Vacation: Beach.mkv
-27M 2012 Vacation: Volcano.mkv
-```
-
-* Logs files are stored in directory `0log`
-
-```
-$ ls -1sh 0log/
-total 240K
-4.0K 0transcode.log
- 60K 2012 Vacation: Beach.mkv.crop
- 36K 2012 Vacation: Beach.mkv.transcode
- 88K 2012 Vacation: Volcano.mkv.crop
- 52K 2012 Vacation: Volcano.mkv.transcode
+encoded 173625 frames in 4940.02s (35.14 fps), 356.72 kb/s, Avg QP:35.31
+02:43:42 Transcoding completed in 1:21:28
 ```
 
 ### Output Format
-* Video: HEVC (a.k.a. H.265 and MPEG-H Part 2)
+* Video: HEVC (a.k.a. H.265 or MPEG-H Part 2)
 * Audio: Opus
-* Subtitles: ASS (text subtitles) or Copied from Source (image subtitles)
+* Subtitles: ASS (SubStation Alph) text or Copied from Source (image subtitles)
 * Metadata: `title` is set to the filename minus the file extension
 * Container: Matroska
