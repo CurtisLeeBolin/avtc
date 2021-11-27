@@ -26,9 +26,7 @@ import subprocess
 import time
 import datetime
 import re
-import threading
-import queue
-
+from multiprocessing import Process, Queue
 
 class AvtcCommon:
     # list of file extentions to find
@@ -43,12 +41,13 @@ class AvtcCommon:
     def __init__(self, fileList, workingDir, deinterlace=False,
                  scale=None, transcode_force=False):
         self.mkIODirs(workingDir)
-        for f in fileList:
-            if os.path.isfile(f):
-                fileName, fileExtension = os.path.splitext(f)
+        for file in fileList:
+            if os.path.isfile(file):
+                fileName, fileExtension = os.path.splitext(file)
                 if self.checkFileType(fileExtension):
-                    self.transcode(f, fileName, deinterlace, scale,
+                    self.transcode(file, fileName, deinterlace, scale,
                                    transcode_force)
+        return None
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -79,14 +78,15 @@ class AvtcCommon:
         for dir in [self.inputDir, self.outputDir]:
             if not os.path.exists(dir):
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
+        return None
 
-    def transcode(self, f, fileName, deinterlace, scale, transcode_force):
-        inputFile = '{}/{}'.format(self.inputDir, f)
+    def transcode(self, file, fileName, deinterlace, scale, transcode_force):
+        inputFile = '{}/{}'.format(self.inputDir, file)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
         errorFile = '{}.error'.format(outputFile)
         timeSpace = '        '
-        os.rename(f, inputFile)
+        os.rename(file, inputFile)
 
         print(time.strftime('%X'), ' Analyzing \'', fileName, '\'', sep='')
         timeStarted = int(time.time())
@@ -236,49 +236,48 @@ class AvtcCommon:
         transcodeArgs.extend(videoList)
         transcodeArgs.extend(audioList)
         transcodeArgs.extend(subtitleList)
-        transcodeArgs.extend([
-            '-map_metadata', '-1', '-metadata', 'title={}'.format(fileName),
-            '-max_muxing_queue_size', '1024', '-y', '-f',
-            'matroska', outputFilePart
-        ])
+        transcodeArgs.extend(['-map_metadata', '-1', '-metadata',
+            'title={}'.format(fileName), '-max_muxing_queue_size',
+            '1024', '-y', '-f', 'matroska', outputFilePart])
         transcodeArgs = list(filter(None, transcodeArgs))
 
-        def enqueue_output(out, queue):
-            for line in iter(out.readline, b''):
+        def enqueue_output(stderr, queue):
+            for line in iter(stderr.readline, b''):
                 queue.put(line)
-            out.close()
+            stderr.close()
+            return None
 
         p = subprocess.Popen(transcodeArgs, stderr=subprocess.PIPE,
             universal_newlines=True)
-        q = queue.Queue()
-        t = threading.Thread(target=enqueue_output, args=(p.stderr, q))
-        t.daemon = True
-        t.start()
+        q = Queue()
+        mp = Process(target=enqueue_output, args=(p.stderr, q),
+            daemon=True)
+        mp.start()
 
         stderrList = [None]*20
         while True:
             try:
-                line = q.get(timeout=5)
+                line = q.get(timeout=1)
                 line_str = line[:-1]  # removes newline character at end
-                print(line_str, end='\r', flush=True)
-                stderrList.pop(0)
+                print(line_str, end='\r')
+                del stderrList[0]
                 stderrList.append(line)
             except:
                 pass
             poll = p.poll()
             if poll is not None:
-                print()
                 if p.returncode != 0:
                     with open(errorFile, 'w', encoding='utf-8') as f:
                         f.write('{}\n\n{}'.format(transcodeArgs,
                             ''.join(stderrList)))
+                print()
                 break
-
 
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
         print(time.strftime('%X'), 'Transcoding completed in',
             datetime.timedelta(seconds=timeCompletedTranscoding), '\n')
         os.rename(outputFilePart, outputFile)
+        return None
 
 if __name__ == '__main__':
 
