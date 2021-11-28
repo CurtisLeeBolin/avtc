@@ -270,6 +270,11 @@ class AvtcCommon:
                     with open(errorFile, 'w', encoding='utf-8') as f:
                         f.write('{}\n\n{}'.format(transcodeArgs,
                             ''.join(stderrList)))
+                q.close()
+                q.join_thread()
+                mp.terminate()
+                mp.join()
+                mp.close()
                 print()
                 break
 
