@@ -185,8 +185,8 @@ class AvtcCommon:
             cropDetectVideoFilterList.append('cropdetect')
 
             transcodeArgs = [
-                'ffmpeg', '-i', inputFile, '-ss', cropDetectStart,
-                '-t', cropDetectDuration
+                'ffmpeg', '-ss', cropDetectStart,
+                '-t', cropDetectDuration, '-i', inputFile
             ]
             transcodeArgs.extend(cropDetectVideoFilterList)
             transcodeArgs.extend([
