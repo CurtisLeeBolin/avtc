@@ -165,7 +165,7 @@ class AvtcCommon:
                 duration = durationList[-1]
                 durationSplitList = duration.split(':')
 
-            videoFilterList = ['-filter:v']
+            videoFilterList = []
             if deinterlace:
                 videoFilterList.append('bwdif')
 
@@ -186,13 +186,10 @@ class AvtcCommon:
 
             transcodeArgs = [
                 'ffmpeg', '-ss', cropDetectStart,
-                '-t', cropDetectDuration, '-i', inputFile
-            ]
-            transcodeArgs.extend(cropDetectVideoFilterList)
-            transcodeArgs.extend([
+                '-t', cropDetectDuration, '-i', inputFile,
+                '-filter:v', ','.join(cropDetectVideoFilterList),
                 '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull
-            ])
-            transcodeArgs = list(filter(None, transcodeArgs))
+            ]
 
             subprocessDict = self.runSubprocess(transcodeArgs)
             stderrData = subprocessDict['stderrData']
@@ -219,8 +216,10 @@ class AvtcCommon:
         timeStartTranscoding = int(time.time())
         print(timeSpace, 'Transcoding Started')
 
-        transcodeArgs = ['ffmpeg', '-v', 'error', '-stats', '-i', inputFile]
-        transcodeArgs.extend(videoFilterList)
+        transcodeArgs = [
+            'ffmpeg', '-v', 'error', '-stats', '-i', inputFile,
+            '-filter:v', ','.join(videoFilterList)
+        ]
         transcodeArgs.extend(mapList)
         transcodeArgs.extend(videoList)
         transcodeArgs.extend(audioList)
