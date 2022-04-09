@@ -39,14 +39,13 @@ class AvtcCommon:
     outputDir = '0out'
 
     def __init__(self, fileList, workingDir, deinterlace=False,
-                 scale=None, transcode_force=False):
+                 transcode_force=False):
         self.mkIODirs(workingDir)
         for file in fileList:
             if os.path.isfile(file):
                 fileName, fileExtension = os.path.splitext(file)
                 if self.checkFileType(fileExtension):
-                    self.transcode(file, fileName, deinterlace, scale,
-                                   transcode_force)
+                    self.transcode(file, fileName, deinterlace, transcode_force)
         return None
 
     def checkFileType(self, fileExtension):
@@ -80,7 +79,7 @@ class AvtcCommon:
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
         return None
 
-    def transcode(self, file, fileName, deinterlace, scale, transcode_force):
+    def transcode(self, file, fileName, deinterlace, transcode_force):
         inputFile = '{}/{}'.format(self.inputDir, file)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
@@ -104,6 +103,8 @@ class AvtcCommon:
         videoStreamNumber = 0
         audioStreamNumber = 0
         subtitleStreamNumber = 0
+        input_w = 0
+        input_h = 0
         for stream in streamList:
             if 'Video' in stream:
                 if not self.checkForImage(stream):
@@ -118,6 +119,13 @@ class AvtcCommon:
                         videoList.extend(['-c:v:{}'.format(videoStreamNumber),
                                          'libx265'])
                     videoStreamNumber = videoStreamNumber + 1
+                    resolution = re.findall('Video: .*? (\d\d+x\d+)',
+                                            stream)[0]
+                    if resolution[-1] == ',':
+                        resolution = resolution[:-1]
+                    resolutionList = resolution.split('x')
+                    input_w = int(resolutionList[0])
+                    input_h = int(resolutionList[1])
             elif 'Audio' in stream:
                 result = re.findall('^\d*', stream)
                 mapList.extend(['-map', '0:{}'.format(result[0])])
@@ -157,28 +165,9 @@ class AvtcCommon:
                 duration = durationList[-1]
                 durationSplitList = duration.split(':')
 
-            resolution = re.findall('Video: .*? (\d\d+x\d+)', stderrData)[0]
-            if resolution[-1] == ',':
-                resolution = resolution[:-1]
-            resolutionList = resolution.split('x')
-            input_w = int(resolutionList[0])
-            input_h = int(resolutionList[1])
-
             videoFilterList = ['-filter:v']
             if deinterlace:
                 videoFilterList.append('bwdif')
-            if scale == '720p':
-                if input_w > 1280 or input_h > 720:
-                    videoFilterList.append('scale=1280:-2')
-                    print(timeSpace, 'Above 720p: Scaling Enabled')
-                else:
-                    print(timeSpace, 'Not Above 720p: Scaling Disabled')
-            if scale == '1080p':
-                if input_w > 1920 or input_h > 1080:
-                    videoFilterList.append('scale=1920:-2')
-                    print(timeSpace, 'Above 1080p: Scaling Enabled')
-                else:
-                    print(timeSpace, 'Not Above 1080p: Scaling Disabled')
 
             if duration != 'N/A':
                 durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
@@ -264,8 +253,7 @@ class AvtcCommon:
                 stderrList.append(line)
             except:
                 pass
-            poll = p.poll()
-            if poll is not None:
+            if p.poll() is not None:
                 if p.returncode != 0:
                     with open(errorFile, 'w', encoding='utf-8') as f:
                         f.write('{}\n\n{}'.format(transcodeArgs,
@@ -304,8 +292,6 @@ if __name__ == '__main__':
         '-f', '--filelist', dest='fileList', help=(
             'A comma separated list of files in the current directory'))
     parser.add_argument(
-        '--scale', dest='scale', help='Scale Videos to 720p or 1080p.')
-    parser.add_argument(
         '-t', '--transcode-force', help='Force file/s to be transcoded.',
         action='store_true')
     args = parser.parse_args()
@@ -313,9 +299,6 @@ if __name__ == '__main__':
     if (args.fileList and args.directory):
         print(('Arguments -f (--filelist) and -d (--directory) can not be '
                'used together.'))
-        exit(1)
-    elif (args.scale not in [None, '720p', '1080p']):
-        print(('Argument --scale only accepts strings 720p or 1080p'))
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -329,8 +312,6 @@ if __name__ == '__main__':
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    if (args.scale in ['720p', '1080p']):
-        args.transcode_force = True
 
-    AvtcCommon(fileList, workingDir, args.deinterlace, args.scale,
+    AvtcCommon(fileList, workingDir, args.deinterlace,
                args.transcode_force)
