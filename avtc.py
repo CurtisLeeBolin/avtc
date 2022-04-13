@@ -158,30 +158,34 @@ class AvtcCommon:
                 subtitleStreamNumber = subtitleStreamNumber + 1
 
         if not videoCopy:
+            videoFilterList = []
+            if deinterlace:
+                videoFilterList.append('bwdif')
+
+            cropDetectVideoFilterList = list(videoFilterList)
+
             durationList = re.findall('Duration: (.*?),', stderrData)
             duration = 'N/A'
             durationSplitList = None
             if durationList:
                 duration = durationList[-1]
                 durationSplitList = duration.split(':')
-
-            videoFilterList = []
-            if deinterlace:
-                videoFilterList.append('bwdif')
-
             if duration != 'N/A':
                 durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
                                int(durationSplitList[1]) +
                                float(durationSplitList[2]))
-                cropDetectStart = str(datetime.timedelta(
-                                      seconds=(durationSec / 10)))
-                cropDetectDuration = str(datetime.timedelta(
-                                         seconds=(durationSec / 100)))
+                if durationSec > 60:
+                    cropDetectStart = str(datetime.timedelta(
+                                          seconds=(durationSec / 10)))
+                    cropDetectDuration = str(datetime.timedelta(
+                                             seconds=(durationSec / 100)))
+                else:
+                    cropDetectStart = '0'
+                    cropDetectDuration = '60'
             else:
                 cropDetectStart = '0'
                 cropDetectDuration = '60'
 
-            cropDetectVideoFilterList = list(videoFilterList)
             cropDetectVideoFilterList.append('cropdetect')
 
             transcodeArgs = [
