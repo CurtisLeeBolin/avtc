@@ -32,11 +32,10 @@ optional arguments:
                         A directory
   -f FILELIST, --filelist FILELIST
                         A comma separated list of files in the current directory
-  --scale SCALE         Scale Videos to 720p or 1080p.
   -t, --transcode-force
                         Force file/s to be transcoded.
 
-Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
 * Change to the videos directory you want to transcode.
