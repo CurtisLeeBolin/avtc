@@ -21,7 +21,7 @@ ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 
 ```
 $ avtc --help
-usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [--scale SCALE] [-t]
+usage: avtc.py [-h] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [-t]
 
 Audio Video TransCoder
 
