@@ -38,14 +38,14 @@ class AvtcCommon:
     inputDir = '0in'
     outputDir = '0out'
 
-    def __init__(self, fileList, workingDir, deinterlace=False,
+    def __init__(self, fileList, workingDir, crop=False, deinterlace=False,
                  transcode_force=False):
         self.mkIODirs(workingDir)
         for file in fileList:
             if os.path.isfile(file):
                 fileName, fileExtension = os.path.splitext(file)
                 if self.checkFileType(fileExtension):
-                    self.transcode(file, fileName, deinterlace, transcode_force)
+                    self.transcode(file, fileName, crop, deinterlace, transcode_force)
         return None
 
     def checkFileType(self, fileExtension):
@@ -79,7 +79,7 @@ class AvtcCommon:
                 os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
         return None
 
-    def transcode(self, file, fileName, deinterlace, transcode_force):
+    def transcode(self, file, fileName, crop, deinterlace, transcode_force):
         inputFile = '{}/{}'.format(self.inputDir, file)
         outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
         outputFilePart = '{}.part'.format(outputFile)
@@ -157,73 +157,78 @@ class AvtcCommon:
                     subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'copy'])
                 subtitleStreamNumber = subtitleStreamNumber + 1
 
+        videoFilterList = []
         if not videoCopy:
-            videoFilterList = []
             if deinterlace:
                 videoFilterList.append('bwdif')
 
-            cropDetectVideoFilterList = list(videoFilterList)
+            if crop:
+                cropDetectVideoFilterList = list(videoFilterList)
 
-            durationList = re.findall('Duration: (.*?),', stderrData)
-            duration = 'N/A'
-            durationSplitList = None
-            if durationList:
-                duration = durationList[-1]
-                durationSplitList = duration.split(':')
-            if duration != 'N/A':
-                durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
-                               int(durationSplitList[1]) +
-                               float(durationSplitList[2]))
-                if durationSec > 60:
-                    cropDetectStart = str(datetime.timedelta(
-                                          seconds=(durationSec / 10)))
-                    cropDetectDuration = str(datetime.timedelta(
-                                             seconds=(durationSec / 100)))
+                durationList = re.findall('Duration: (.*?),', stderrData)
+                duration = 'N/A'
+                durationSplitList = None
+                if durationList:
+                    duration = durationList[-1]
+                    durationSplitList = duration.split(':')
+                if duration != 'N/A':
+                    durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
+                                   int(durationSplitList[1]) +
+                                   float(durationSplitList[2]))
+                    if durationSec > 60:
+                        cropDetectStart = str(datetime.timedelta(
+                                              seconds=(durationSec / 10)))
+                        cropDetectDuration = str(datetime.timedelta(
+                                                 seconds=(durationSec / 100)))
+                    else:
+                        cropDetectStart = '0'
+                        cropDetectDuration = '60'
                 else:
                     cropDetectStart = '0'
                     cropDetectDuration = '60'
-            else:
-                cropDetectStart = '0'
-                cropDetectDuration = '60'
 
-            cropDetectVideoFilterList.append('cropdetect')
+                cropDetectVideoFilterList.append('cropdetect')
 
-            transcodeArgs = [
-                'ffmpeg', '-ss', cropDetectStart,
-                '-t', cropDetectDuration, '-i', inputFile,
-                '-filter:v', ','.join(cropDetectVideoFilterList),
-                '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull
-            ]
+                transcodeArgs = [
+                    'ffmpeg', '-ss', cropDetectStart,
+                    '-t', cropDetectDuration, '-i', inputFile,
+                    '-filter:v', ','.join(cropDetectVideoFilterList),
+                    '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull
+                ]
 
-            subprocessDict = self.runSubprocess(transcodeArgs)
-            stderrData = subprocessDict['stderrData']
+                subprocessDict = self.runSubprocess(transcodeArgs)
+                stderrData = subprocessDict['stderrData']
 
-            timeCompletedCrop = int(time.time()) - timeStarted
+                timeCompletedCrop = int(time.time()) - timeStarted
 
-            print(time.strftime('%X'), 'Analysis completed in',
-                datetime.timedelta(seconds=timeCompletedCrop))
-            print(timeSpace, 'Duration:', duration)
+                print(time.strftime('%X'), 'Analysis completed in',
+                    datetime.timedelta(seconds=timeCompletedCrop))
+                print(timeSpace, 'Duration:', duration)
 
-            crop = re.findall('crop=(.*?)\n', stderrData)[-1]
-            cropList = crop.split(':')
-            w = int(cropList[0])
-            h = int(cropList[1])
+                crop = re.findall('crop=(.*?)\n', stderrData)[-1]
+                cropList = crop.split(':')
+                w = int(cropList[0])
+                h = int(cropList[1])
 
-            print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h,
-                sep='')
-            print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
+                print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h,
+                    sep='')
+                print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
 
-            videoFilterList.append('crop={}'.format(crop))
-        else:
-            videoFilterList = []
+                videoFilterList.append('crop={}'.format(crop))
 
         timeStartTranscoding = int(time.time())
         print(timeSpace, 'Transcoding Started')
 
-        transcodeArgs = [
-            'ffmpeg', '-v', 'error', '-stats', '-i', inputFile,
-            '-filter:v', ','.join(videoFilterList)
-        ]
+        transcodeArgs = []
+        if not videoFilterList:
+            transcodeArgs = [
+                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile
+            ]
+        else:
+            transcodeArgs = [
+                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile,
+                '-filter:v', ','.join(videoFilterList)
+            ]
         transcodeArgs.extend(mapList)
         transcodeArgs.extend(videoList)
         transcodeArgs.extend(audioList)
@@ -288,20 +293,22 @@ if __name__ == '__main__':
         epilog=(
             'Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
     parser.add_argument(
-        '--deinterlace', help='Deinterlace Videos.', action='store_true')
+        '--crop', help='Auto Crop Videos', action='store_true')
+    parser.add_argument(
+        '--deinterlace', help='Deinterlace Videos', action='store_true')
     parser.add_argument(
         '-d', '--directory', dest='directory', help='A directory')
     parser.add_argument(
         '-f', '--filelist', dest='fileList', help=(
             'A comma separated list of files in the current directory'))
     parser.add_argument(
-        '-t', '--transcode-force', help='Force file/s to be transcoded.',
+        '-t', '--transcode-force', help='Force file/s to be transcoded',
         action='store_true')
     args = parser.parse_args()
 
     if (args.fileList and args.directory):
         print(('Arguments -f (--filelist) and -d (--directory) can not be '
-               'used together.'))
+               'used together'))
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -316,5 +323,5 @@ if __name__ == '__main__':
         fileList.sort()
 
 
-    AvtcCommon(fileList, workingDir, args.deinterlace,
+    AvtcCommon(fileList, workingDir, args.crop, args.deinterlace,
                args.transcode_force)
