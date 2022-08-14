@@ -291,7 +291,7 @@ if __name__ == '__main__':
         prog='avtc.py',
         description='Audio Video TransCoder',
         epilog=(
-            'Copyright 2013-2021 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+            'Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
     parser.add_argument(
         '--crop', help='Auto Crop Videos', action='store_true')
     parser.add_argument(
