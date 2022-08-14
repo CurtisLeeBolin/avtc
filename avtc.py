@@ -157,6 +157,12 @@ class AvtcCommon:
                     subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'copy'])
                 subtitleStreamNumber = subtitleStreamNumber + 1
 
+        durationList = re.findall('Duration: (.*?),', stderrData)
+        duration = 'N/A'
+        durationSplitList = None
+        if durationList:
+            duration = durationList[-1]
+            durationSplitList = duration.split(':')
         videoFilterList = []
         if not videoCopy:
             if deinterlace:
@@ -165,12 +171,6 @@ class AvtcCommon:
             if crop:
                 cropDetectVideoFilterList = list(videoFilterList)
 
-                durationList = re.findall('Duration: (.*?),', stderrData)
-                duration = 'N/A'
-                durationSplitList = None
-                if durationList:
-                    duration = durationList[-1]
-                    durationSplitList = duration.split(':')
                 if duration != 'N/A':
                     durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
                                    int(durationSplitList[1]) +
@@ -199,22 +199,23 @@ class AvtcCommon:
                 subprocessDict = self.runSubprocess(transcodeArgs)
                 stderrData = subprocessDict['stderrData']
 
-                timeCompletedCrop = int(time.time()) - timeStarted
-
-                print(time.strftime('%X'), 'Analysis completed in',
-                    datetime.timedelta(seconds=timeCompletedCrop))
-                print(timeSpace, 'Duration:', duration)
-
                 crop = re.findall('crop=(.*?)\n', stderrData)[-1]
                 cropList = crop.split(':')
                 w = int(cropList[0])
                 h = int(cropList[1])
 
-                print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h,
-                    sep='')
-                print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
-
                 videoFilterList.append('crop={}'.format(crop))
+
+        timeCompletedCrop = int(time.time()) - timeStarted
+        print(time.strftime('%X'), 'Analysis completed in',
+            datetime.timedelta(seconds=timeCompletedCrop))
+        print(timeSpace, 'Duration:', duration)
+        print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h, sep='')
+        if crop:
+            print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
+        else:
+            print(timeSpace, ' Output Resolution: ', input_w, 'x', input_h,
+                sep='')
 
         timeStartTranscoding = int(time.time())
         print(timeSpace, 'Transcoding Started')
