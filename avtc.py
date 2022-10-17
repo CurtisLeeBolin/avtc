@@ -252,7 +252,7 @@ class AvtcCommon:
             daemon=True)
         mp.start()
 
-        stderrList = [None]*20
+        stderrList = ['']*20
         while True:
             try:
                 line = q.get(timeout=1)
