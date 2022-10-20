@@ -28,24 +28,27 @@ import datetime
 import re
 from multiprocessing import Process, Queue
 
+
 class AvtcCommon:
     # list of file extentions to find
-    fileExtList = [ '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a',
-                    'm4v', 'mj2', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts',
-                    'nuv', 'ogg', 'ogm', 'ogv', 'rm', 'rmvb', 'vob', 'webm',
-                    'wmv']
+    fileExtList = [
+        '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
+        'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv', 'ogg', 'ogm', 'ogv',
+        'rm', 'rmvb', 'vob', 'webm', 'wmv']
     imageTypeList = ['mjpeg', 'png']
     inputDir = '0in'
     outputDir = '0out'
 
-    def __init__(self, fileList, workingDir, crop=False, deinterlace=False,
-                 transcode_force=False):
+    def __init__(
+            self, fileList, workingDir, crop=False, deinterlace=False,
+            transcode_force=False):
         self.mkIODirs(workingDir)
         for file in fileList:
             if os.path.isfile(file):
                 fileName, fileExtension = os.path.splitext(file)
                 if self.checkFileType(fileExtension):
-                    self.transcode(file, fileName, crop, deinterlace, transcode_force)
+                    self.transcode(
+                        file, fileName, crop, deinterlace, transcode_force)
         return None
 
     def checkFileType(self, fileExtension):
@@ -70,20 +73,21 @@ class AvtcCommon:
             stdoutData = stdoutData.decode(encoding='utf-8', errors='ignore')
         if stderrData is not None:
             stderrData = stderrData.decode(encoding='utf-8', errors='ignore')
-        return {'stdoutData': stdoutData, 'stderrData': stderrData,
-                'returncode': p.returncode}
+        return {
+            'stdoutData': stdoutData, 'stderrData': stderrData,
+            'returncode': p.returncode}
 
     def mkIODirs(self, workingDir):
         for dir in [self.inputDir, self.outputDir]:
             if not os.path.exists(dir):
-                os.mkdir('{}/{}'.format(workingDir, dir), 0o0755)
+                os.mkdir(f'{workingDir}/{dir}', 0o0755)
         return None
 
     def transcode(self, file, fileName, crop, deinterlace, transcode_force):
-        inputFile = '{}/{}'.format(self.inputDir, file)
-        outputFile = '{}/{}.mkv'.format(self.outputDir, fileName)
-        outputFilePart = '{}.part'.format(outputFile)
-        errorFile = '{}.error'.format(outputFile)
+        inputFile = f'{self.inputDir}/{file}'
+        outputFile = f'{self.outputDir}/{fileName}.mkv'
+        outputFilePart = f'{outputFile}.part'
+        errorFile = f'{outputFile}.error'
         timeSpace = '        '
         os.rename(file, inputFile)
 
@@ -105,21 +109,22 @@ class AvtcCommon:
         subtitleStreamNumber = 0
         input_w = 0
         input_h = 0
+        w = 0
+        h = 0
         for stream in streamList:
             if 'Video' in stream:
                 if not self.checkForImage(stream):
-                    result = re.findall('^\d*', stream)
-                    mapList.extend(['-map', '0:{}'.format(result[0])])
-                    if not transcode_force and re.search('(h265|hevc)',
-                                                         stream) is not None:
-                        videoList.extend(['-c:v:{}'.format(videoStreamNumber),
-                                         'copy'])
+                    result = re.findall(r'^\d*', stream)
+                    mapList.extend(['-map', f'0:{result[0]}'])
+                    if (not transcode_force and not deinterlace
+                            and re.search('(h265|hevc)', stream) is not None):
+                        videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
                         videoCopy = True
                     else:
-                        videoList.extend(['-c:v:{}'.format(videoStreamNumber),
-                                         'libx265'])
+                        videoList.extend(
+                            [f'-c:v:{videoStreamNumber}', 'libx265'])
                     videoStreamNumber = videoStreamNumber + 1
-                    resolution = re.findall('Video: .*? (\d\d+x\d+)',
+                    resolution = re.findall(r'Video: .*? (\d\d+x\d+)',
                                             stream)[0]
                     if resolution[-1] == ',':
                         resolution = resolution[:-1]
@@ -127,32 +132,37 @@ class AvtcCommon:
                     input_w = int(resolutionList[0])
                     input_h = int(resolutionList[1])
             elif 'Audio' in stream:
-                result = re.findall('^\d*', stream)
-                mapList.extend(['-map', '0:{}'.format(result[0])])
+                result = re.findall(r'^\d*', stream)
+                mapList.extend(['-map', f'0:{result[0]}'])
                 if 'opus' in stream:
-                    audioList.extend(['-c:a:{}'.format(audioStreamNumber), 'copy'])
+                    audioList.extend([f'-c:a:{audioStreamNumber}', 'copy'])
                 else:
                     audioBitRate = '256k'
                     if re.search('mono', stream) is not None:
                         audioBitRate = '48k'
                     elif re.search('(stereo|downmix)', stream) is not None:
                         audioBitRate = '96k'
-                    elif re.search('(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
-                                   stream) is not None:
+                    elif (re.search(
+                            '(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
+                            stream) is not None):
                         audioBitRate = '128k'
-                    elif re.search('(6.1,7.0,7.1,octagonal,'
-                                   'hexadecagonal)', stream) is not None:
+                    elif (re.search(
+                            '(6.1,7.0,7.1,octagonal,hexadecagonal)',
+                            stream) is not None):
                         audioBitRate = '256k'
-                    audioList.extend(['-c:a:{}'.format(audioStreamNumber),
-                                    'libopus', '-b:a:{}'.format(audioStreamNumber), audioBitRate])
+                    audioList.extend([
+                        f'-c:a:{audioStreamNumber}', 'libopus',
+                        f'-b:a:{audioStreamNumber}', audioBitRate])
                 audioStreamNumber = audioStreamNumber + 1
             elif 'Subtitle' in stream:
-                result = re.findall('^\d*', stream)
-                mapList.extend(['-map', '0:{}'.format(result[0])])
+                result = re.findall(r'^\d*', stream)
+                mapList.extend(['-map', f'0:{result[0]}'])
                 if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
-                    subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'ass'])
+                    subtitleList.extend(
+                        [f'-c:s:{subtitleStreamNumber}', 'ass'])
                 else:
-                    subtitleList.extend(['-c:s:{}'.format(subtitleStreamNumber), 'copy'])
+                    subtitleList.extend(
+                        [f'-c:s:{subtitleStreamNumber}', 'copy'])
                 subtitleStreamNumber = subtitleStreamNumber + 1
 
         durationList = re.findall('Duration: (.*?),', stderrData)
@@ -168,16 +178,16 @@ class AvtcCommon:
 
             if crop:
                 cropDetectVideoFilterList = list(videoFilterList)
-
                 if duration != 'N/A':
-                    durationSec = (60 * 60 * int(durationSplitList[0]) + 60 *
-                                   int(durationSplitList[1]) +
-                                   float(durationSplitList[2]))
+                    durationSec = (
+                        60 * 60 * int(durationSplitList[0]) +
+                        60 * int(durationSplitList[1]) +
+                        float(durationSplitList[2]))
                     if durationSec > 60:
-                        cropDetectStart = str(datetime.timedelta(
-                                              seconds=(durationSec / 10)))
-                        cropDetectDuration = str(datetime.timedelta(
-                                                 seconds=(durationSec / 100)))
+                        cropDetectStart = str(
+                            datetime.timedelta(seconds=(durationSec / 10)))
+                        cropDetectDuration = str(
+                            datetime.timedelta(seconds=(durationSec / 100)))
                     else:
                         cropDetectStart = '0'
                         cropDetectDuration = '60'
@@ -191,8 +201,7 @@ class AvtcCommon:
                     'ffmpeg', '-ss', cropDetectStart,
                     '-t', cropDetectDuration, '-i', inputFile,
                     '-filter:v', ','.join(cropDetectVideoFilterList),
-                    '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull
-                ]
+                    '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
 
                 subprocessDict = self.runSubprocess(transcodeArgs)
                 stderrData = subprocessDict['stderrData']
@@ -202,18 +211,18 @@ class AvtcCommon:
                 w = int(cropList[0])
                 h = int(cropList[1])
 
-                videoFilterList.append('crop={}'.format(crop))
+                videoFilterList.append(f'crop={crop}')
 
         timeCompletedCrop = int(time.time()) - timeStarted
-        print(time.strftime('%X'), 'Analysis completed in',
-            datetime.timedelta(seconds=timeCompletedCrop))
-        print(timeSpace, 'Duration:', duration)
-        print(timeSpace, ' Input  Resolution: ', input_w, 'x', input_h, sep='')
-        if crop:
-            print(timeSpace, ' Output Resolution: ', w, 'x', h, sep='')
+        print(
+            f'{time.strftime("%X")} Analysis completed in',
+            f'{datetime.timedelta(seconds=timeCompletedCrop)}')
+        print(f'{timeSpace} Duration: {duration}')
+        print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
+        if crop and not videoCopy:
+            print(f'{timeSpace} Output Resolution: {w}x{h}')
         else:
-            print(timeSpace, ' Output Resolution: ', input_w, 'x', input_h,
-                sep='')
+            print(f'{timeSpace} Output Resolution: {input_w}x{input_h}')
 
         timeStartTranscoding = int(time.time())
         print(timeSpace, 'Transcoding Started')
@@ -221,20 +230,19 @@ class AvtcCommon:
         transcodeArgs = []
         if not videoFilterList:
             transcodeArgs = [
-                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile
-            ]
+                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile]
         else:
             transcodeArgs = [
                 'ffmpeg', '-v', 'error', '-stats', '-i', inputFile,
-                '-filter:v', ','.join(videoFilterList)
-            ]
+                '-filter:v', ','.join(videoFilterList)]
         transcodeArgs.extend(mapList)
         transcodeArgs.extend(videoList)
         transcodeArgs.extend(audioList)
         transcodeArgs.extend(subtitleList)
-        transcodeArgs.extend(['-map_metadata', '-1', '-metadata',
-            'title={}'.format(fileName), '-max_muxing_queue_size',
-            '1024', '-y', '-f', 'matroska', outputFilePart])
+        transcodeArgs.extend([
+            '-map_metadata', '-1', '-metadata', f'title={fileName}',
+            '-max_muxing_queue_size', '1024', '-y', '-f', 'matroska',
+            outputFilePart])
         transcodeArgs = list(filter(None, transcodeArgs))
 
         def enqueue_output(stderr, queue):
@@ -243,41 +251,40 @@ class AvtcCommon:
             stderr.close()
             return None
 
-        p = subprocess.Popen(transcodeArgs, stderr=subprocess.PIPE,
-            universal_newlines=True)
+        p = subprocess.Popen(
+            transcodeArgs, stderr=subprocess.PIPE, universal_newlines=True)
         q = Queue()
-        mp = Process(target=enqueue_output, args=(p.stderr, q),
-            daemon=True)
+        mp = Process(target=enqueue_output, args=(p.stderr, q), daemon=True)
         mp.start()
 
         stderrList = ['']*20
         while True:
-            try:
+            if not q.empty():
                 line = q.get(timeout=1)
                 line_str = line[:-1]  # removes newline character at end
                 print(line_str, end='\r')
                 del stderrList[0]
                 stderrList.append(line)
-            except:
-                pass
-            if p.poll() is not None:
-                if p.returncode != 0:
-                    with open(errorFile, 'w', encoding='utf-8') as f:
-                        f.write('{}\n\n{}'.format(transcodeArgs,
-                            ''.join(stderrList)))
-                q.close()
-                q.join_thread()
-                mp.terminate()
-                mp.join()
-                mp.close()
-                print()
-                break
+                if p.poll() is not None:
+                    if p.returncode != 0:
+                        with open(errorFile, 'w', encoding='utf-8') as f:
+                            stderr = ''.join(stderrList)
+                            f.write(f'{transcodeArgs}\n\n{stderr}')
+                    q.close()
+                    q.join_thread()
+                    mp.terminate()
+                    mp.join()
+                    mp.close()
+                    print()
+                    break
 
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
-        print(time.strftime('%X'), 'Transcoding completed in',
-            datetime.timedelta(seconds=timeCompletedTranscoding), '\n')
+        print(
+            f'{time.strftime("%X")} Transcoding completed in',
+            f'{datetime.timedelta(seconds=timeCompletedTranscoding)}\n')
         os.rename(outputFilePart, outputFile)
         return None
+
 
 if __name__ == '__main__':
 
@@ -306,8 +313,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if (args.fileList and args.directory):
-        print(('Arguments -f (--filelist) and -d (--directory) can not be '
-               'used together'))
+        print(
+            'Arguments -f (--filelist) and -d (--directory) can not be ',
+            'used together')
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -320,7 +328,6 @@ if __name__ == '__main__':
         workingDir = os.getcwd()
         fileList = os.listdir(workingDir)
         fileList.sort()
-
 
     AvtcCommon(fileList, workingDir, args.crop, args.deinterlace,
                args.transcode_force)
