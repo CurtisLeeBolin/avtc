@@ -143,9 +143,7 @@ class AvtcCommon:
                     elif re.search('(6.1,7.0,7.1,octagonal,'
                                    'hexadecagonal)', stream) is not None:
                         audioBitRate = '256k'
-                    audioList.extend(['-filter:a:{}'.format(audioStreamNumber),
-                                    'aformat=channel_layouts=7.1|5.1|stereo|mono',
-                                    '-c:a:{}'.format(audioStreamNumber),
+                    audioList.extend(['-c:a:{}'.format(audioStreamNumber),
                                     'libopus', '-b:a:{}'.format(audioStreamNumber), audioBitRate])
                 audioStreamNumber = audioStreamNumber + 1
             elif 'Subtitle' in stream:
