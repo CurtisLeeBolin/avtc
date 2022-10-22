@@ -150,6 +150,14 @@ class AvtcCommon:
                             '(6.1,7.0,7.1,octagonal,hexadecagonal)',
                             stream) is not None):
                         audioBitRate = '256k'
+                    if re.search(r'5.1\(side\)', stream) is not None:
+                        audioList.extend([
+                            f'-filter:a:{audioStreamNumber}',
+                            'aformat=channel_layouts=5.1'])
+                    elif re.search(r'5.0\(side\)', stream) is not None:
+                        audioList.extend([
+                            f'-filter:a:{audioStreamNumber}',
+                            'aformat=channel_layouts=5.0'])
                     audioList.extend([
                         f'-c:a:{audioStreamNumber}', 'libopus',
                         f'-b:a:{audioStreamNumber}', audioBitRate])
