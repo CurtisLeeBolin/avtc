@@ -20,7 +20,6 @@ ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
 * View Help
 
 ```
-$ avtc --help
 usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [-t]
 
 Audio Video TransCoder
@@ -33,10 +32,10 @@ options:
                         A directory
   -f FILELIST, --filelist FILELIST
                         A comma separated list of files in the current directory
-  -t, --transcode-force
-                        Force file/s to be transcoded
+  -t, --transcode       Force file/s to be transcoded
 
-Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>```
+Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+```
 
 * Change to the videos directory you want to transcode.
 
@@ -65,10 +64,11 @@ $ avtc --crop
          Output Resolution: 1904x784
          Transcoding Started
 encoded 130219 frames in 4511.67s (28.86 fps), 390.06 kb/s, Avg QP:32.91
-01:21:24 Transcoding completed in 1:15:11 
+01:21:24 Transcoding completed in 1:15:11
 ```
 
 ### Output Format
+
 * Video: HEVC (a.k.a. H.265 or MPEG-H Part 2)
 * Audio: Opus
 * Subtitles: ASS (SubStation Alph) text or Copied from Source (image subtitles)

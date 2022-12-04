@@ -21,12 +21,12 @@
 #
 #
 
+import datetime
+import multiprocessing
 import os
+import re
 import subprocess
 import time
-import datetime
-import re
-from multiprocessing import Process, Queue
 
 
 class AvtcCommon:
@@ -34,21 +34,30 @@ class AvtcCommon:
     fileExtList = [
         '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
         'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv', 'ogg', 'ogm', 'ogv',
-        'rm', 'rmvb', 'vob', 'webm', 'wmv']
+        'rm', 'rmvb', 'ts', 'vob', 'webm', 'wmv']
     imageTypeList = ['mjpeg', 'png']
     inputDir = '0in'
     outputDir = '0out'
 
     def __init__(
-            self, fileList, workingDir, crop=False, deinterlace=False,
-            transcode_force=False):
-        self.mkIODirs(workingDir)
-        for file in fileList:
+            self, workingDir, fileList, crop=False, deinterlace=False,
+            transcodeForce=False):
+        self.workingDir = workingDir
+        self.fileList = fileList
+        self.crop = crop
+        self.deinterlace = deinterlace
+        self.transcodeForce = transcodeForce
+        return None
+
+    def run(self):
+        self.mkIODirs(self.workingDir)
+        for file in self.fileList:
             if os.path.isfile(file):
                 fileName, fileExtension = os.path.splitext(file)
                 if self.checkFileType(fileExtension):
                     self.transcode(
-                        file, fileName, crop, deinterlace, transcode_force)
+                        file, fileName, self.crop, self.deinterlace,
+                        self.transcodeForce)
         return None
 
     def checkFileType(self, fileExtension):
@@ -83,7 +92,7 @@ class AvtcCommon:
                 os.mkdir(f'{workingDir}/{dir}', 0o0755)
         return None
 
-    def transcode(self, file, fileName, crop, deinterlace, transcode_force):
+    def transcode(self, file, fileName, crop, deinterlace, transcodeForce):
         inputFile = f'{self.inputDir}/{file}'
         outputFile = f'{self.outputDir}/{fileName}.mkv'
         outputFilePart = f'{outputFile}.part'
@@ -116,7 +125,7 @@ class AvtcCommon:
                 if not self.checkForImage(stream):
                     result = re.findall(r'^\d*', stream)
                     mapList.extend(['-map', f'0:{result[0]}'])
-                    if (not transcode_force and not deinterlace
+                    if (not transcodeForce and not deinterlace
                             and re.search('(h265|hevc)', stream) is not None):
                         videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
                         videoCopy = True
@@ -261,8 +270,9 @@ class AvtcCommon:
 
         p = subprocess.Popen(
             transcodeArgs, stderr=subprocess.PIPE, universal_newlines=True)
-        q = Queue()
-        mp = Process(target=enqueue_output, args=(p.stderr, q), daemon=True)
+        q = multiprocessing.Queue()
+        mp = multiprocessing.Process(
+            target=enqueue_output, args=(p.stderr, q), daemon=True)
         mp.start()
 
         stderrList = ['']*20
@@ -285,6 +295,7 @@ class AvtcCommon:
                     mp.close()
                     print()
                     break
+            time.sleep(1)
 
         timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
         print(
@@ -294,8 +305,7 @@ class AvtcCommon:
         return None
 
 
-if __name__ == '__main__':
-
+def main():
     import argparse
 
     if os.name == 'posix':
@@ -316,7 +326,7 @@ if __name__ == '__main__':
         '-f', '--filelist', dest='fileList', help=(
             'A comma separated list of files in the current directory'))
     parser.add_argument(
-        '-t', '--transcode-force', help='Force file/s to be transcoded',
+        '-t', '--transcode', help='Force file/s to be transcoded',
         action='store_true')
     args = parser.parse_args()
 
@@ -337,5 +347,10 @@ if __name__ == '__main__':
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    AvtcCommon(fileList, workingDir, args.crop, args.deinterlace,
-               args.transcode_force)
+    tc = AvtcCommon(
+        workingDir, fileList, args.crop, args.deinterlace, args.transcode)
+    tc.run()
+
+
+if __name__ == '__main__':
+    main()
