@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #
 
 import datetime
-import multiprocessing
 import os
 import re
 import subprocess
@@ -75,16 +74,26 @@ class AvtcCommon:
                 return True
         return False
 
-    def runSubprocess(self, args):
-        p = subprocess.Popen(args, stderr=subprocess.PIPE)
-        stdoutData, stderrData = p.communicate()
-        if stdoutData is not None:
-            stdoutData = stdoutData.decode(encoding='utf-8', errors='ignore')
-        if stderrData is not None:
-            stderrData = stderrData.decode(encoding='utf-8', errors='ignore')
-        return {
-            'stdoutData': stdoutData, 'stderrData': stderrData,
-            'returncode': p.returncode}
+    def runSubprocess(self, command):
+        with subprocess.Popen(
+            command, stderr=subprocess.PIPE, universal_newlines=True
+        ) as p:
+            stderrList = ['']*100
+            for line in p.stderr:
+                columns, lines = os.get_terminal_size()
+                output = line[:-1]
+                output = output[:columns]
+                print(f'\r\033[K{output}', end='')
+                del stderrList[0]
+                stderrList.append(line)
+            print()
+            p.wait()
+            return (p.returncode, stderrList)
+
+    def writeErrorFile(self, errorFile, transcodeArgs, stderrList):
+        with open(errorFile, 'w', encoding='utf-8') as f:
+            stderr = ''.join(stderrList)
+            f.write(f'{transcodeArgs}\n\n{stderr}')
 
     def mkIODirs(self, workingDir):
         for dir in [self.inputDir, self.outputDir]:
@@ -103,12 +112,14 @@ class AvtcCommon:
         print(time.strftime('%X'), ' Analyzing \'', fileName, '\'', sep='')
         timeStarted = int(time.time())
 
-        transcodeArgs = ['ffmpeg', '-i', inputFile]
-        subprocessDict = self.runSubprocess(transcodeArgs)
-        stderrData = subprocessDict['stderrData']
+        transcodeArgs = ['ffprobe', '-hide_banner', '-i', inputFile]
+        returncode, stderrList = self.runSubprocess(transcodeArgs)
+        if returncode != 0:
+            self.writeErrorFile(errorFile, transcodeArgs, stderrList)
 
         videoCopy = False
-        streamList = re.findall('Stream #0:(.*?)\n', stderrData)
+        streamList = [x for x in stderrList if 'Stream #0' in x]
+        stderrData = ''.join(stderrList)
         mapList = []
         videoList = []
         audioList = []
@@ -123,7 +134,7 @@ class AvtcCommon:
         for stream in streamList:
             if 'Video' in stream:
                 if not self.checkForImage(stream):
-                    result = re.findall(r'^\d*', stream)
+                    result = re.findall(r'Stream #0:(\d+)', stream)
                     mapList.extend(['-map', f'0:{result[0]}'])
                     if (not transcodeForce and not deinterlace
                             and re.search('(h265|hevc)', stream) is not None):
@@ -141,7 +152,7 @@ class AvtcCommon:
                     input_w = int(resolutionList[0])
                     input_h = int(resolutionList[1])
             elif 'Audio' in stream:
-                result = re.findall(r'^\d*', stream)
+                result = re.findall(r'Stream #0:(\d+)', stream)
                 mapList.extend(['-map', f'0:{result[0]}'])
                 if 'opus' in stream:
                     audioList.extend([f'-c:a:{audioStreamNumber}', 'copy'])
@@ -172,7 +183,7 @@ class AvtcCommon:
                         f'-b:a:{audioStreamNumber}', audioBitRate])
                 audioStreamNumber = audioStreamNumber + 1
             elif 'Subtitle' in stream:
-                result = re.findall(r'^\d*', stream)
+                result = re.findall(r'Stream #0:(\d+)', stream)
                 mapList.extend(['-map', f'0:{result[0]}'])
                 if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
                     subtitleList.extend(
@@ -215,13 +226,16 @@ class AvtcCommon:
                 cropDetectVideoFilterList.append('cropdetect')
 
                 transcodeArgs = [
-                    'ffmpeg', '-ss', cropDetectStart,
-                    '-t', cropDetectDuration, '-i', inputFile,
+                    'ffmpeg', '-hide_banner', '-nostats', '-ss',
+                    cropDetectStart, '-t', cropDetectDuration, '-i', inputFile,
                     '-filter:v', ','.join(cropDetectVideoFilterList),
                     '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
 
-                subprocessDict = self.runSubprocess(transcodeArgs)
-                stderrData = subprocessDict['stderrData']
+                returncode, stderrList = self.runSubprocess(transcodeArgs)
+                if returncode != 0:
+                    self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+
+                stderrData = ''.join(stderrList)
 
                 crop = re.findall('crop=(.*?)\n', stderrData)[-1]
                 cropList = crop.split(':')
@@ -247,10 +261,10 @@ class AvtcCommon:
         transcodeArgs = []
         if not videoFilterList:
             transcodeArgs = [
-                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile]
+                'ffmpeg', '-i', inputFile]
         else:
             transcodeArgs = [
-                'ffmpeg', '-v', 'error', '-stats', '-i', inputFile,
+                'ffmpeg', '-i', inputFile,
                 '-filter:v', ','.join(videoFilterList)]
         transcodeArgs.extend(mapList)
         transcodeArgs.extend(videoList)
@@ -262,60 +276,27 @@ class AvtcCommon:
             outputFilePart])
         transcodeArgs = list(filter(None, transcodeArgs))
 
-        def enqueue_output(stderr, queue):
-            for line in iter(stderr.readline, b''):
-                queue.put(line)
-            stderr.close()
-            return None
-
-        p = subprocess.Popen(
-            transcodeArgs, stderr=subprocess.PIPE, universal_newlines=True)
-        q = multiprocessing.Queue()
-        mp = multiprocessing.Process(
-            target=enqueue_output, args=(p.stderr, q), daemon=True)
-        mp.start()
-
-        stderrList = ['']*20
-        while True:
-            if not q.empty():
-                line = q.get(timeout=1)
-                line_str = line[:-1]  # removes newline character at end
-                print(line_str, end='\r')
-                del stderrList[0]
-                stderrList.append(line)
-                if p.poll() is not None:
-                    if p.returncode != 0:
-                        with open(errorFile, 'w', encoding='utf-8') as f:
-                            stderr = ''.join(stderrList)
-                            f.write(f'{transcodeArgs}\n\n{stderr}')
-                    q.close()
-                    q.join_thread()
-                    mp.terminate()
-                    mp.join()
-                    mp.close()
-                    print()
-                    break
-            time.sleep(1)
-
-        timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
-        print(
-            f'{time.strftime("%X")} Transcoding completed in',
-            f'{datetime.timedelta(seconds=timeCompletedTranscoding)}\n')
-        os.rename(outputFilePart, outputFile)
+        returncode, stderrList = self.runSubprocess(transcodeArgs)
+        if returncode == 0:
+            timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
+            print(
+                f'{time.strftime("%X")} Transcoding completed in',
+                f'{datetime.timedelta(seconds=timeCompletedTranscoding)}\n')
+            os.rename(outputFilePart, outputFile)
+        else:
+            self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+            print(f'{time.strftime("%X")} Error: transcoding stopped')
         return None
 
 
 def main():
     import argparse
 
-    if os.name == 'posix':
-        os.nice(19)
-
     parser = argparse.ArgumentParser(
         prog='avtc.py',
         description='Audio Video TransCoder',
         epilog=(
-            'Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+            'Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
     parser.add_argument(
         '--crop', help='Auto Crop Videos', action='store_true')
     parser.add_argument(
