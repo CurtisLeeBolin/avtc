@@ -3,7 +3,7 @@ avtc
 
 **A**udio **V**ideo **T**rans**C**oder - Batch transcodes Audio Video files to HEVC/Opus/ASS/Matroska.
 
-Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
@@ -34,7 +34,7 @@ options:
                         A comma separated list of files in the current directory
   -t, --transcode       Force file/s to be transcoded
 
-Copyright 2013-2022 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
 * Change to the videos directory you want to transcode.
