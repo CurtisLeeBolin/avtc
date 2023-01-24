@@ -285,7 +285,7 @@ class AvtcCommon:
             os.rename(outputFilePart, outputFile)
         else:
             self.writeErrorFile(errorFile, transcodeArgs, stderrList)
-            print(f'{time.strftime("%X")} Error: transcoding stopped')
+            print(f'{time.strftime("%X")} Error: transcoding stopped\n')
         return None
 
 
