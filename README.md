@@ -10,16 +10,24 @@ Documentation
 
 ### Getting Started and Example Run
 
-* Download avtc.py wherever you like. I stored it in `~/Projects/avtc/`.
-* Put a symbolic link somewhere in your $PATH.  I chose `~/.local/bin/`.
+#### There are currently no releases
+#### To install directly from GitHub
 
 ```
-ln -s ~/Projects/avtc/avtc.py ~/.local/bin/avtc
+$ python -m pip install 'git+https://github.com/CurtisLeeBolin/avtc'
 ```
 
-* View Help
+#### Or download, extract, and install
 
 ```
+$ cd avtc
+$ python -m pip install .
+```
+
+#### To view help
+
+```
+$ avtc --help
 usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [-t]
 
 Audio Video TransCoder
@@ -37,9 +45,8 @@ options:
 Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
-* Change to the videos directory you want to transcode.
-
-* Run `avtc`.
+#### Change to a directory with videos you want to transcode
+#### To run `avtc`
 
 ```
 $ avtc
@@ -53,7 +60,7 @@ encoded 173625 frames in 4940.02s (35.14 fps), 356.72 kb/s, Avg QP:35.31
 02:43:42 Transcoding completed in 1:21:28
 ```
 
-* Run `avtc` with auto crop.
+#### To run `avtc` with auto crop
 
 ```
 $ avtc --crop
