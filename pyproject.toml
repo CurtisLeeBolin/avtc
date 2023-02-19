@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "avtc"
+version = "0.0.1"
+authors = [
+  { name="Curtis Lee Bolin", email="CurtisLeeBolin@gmail.com" },
+]
+description = "Audio Video TransCoder - Batch transcodes Audio Video files to HEVC/Opus/ASS/Matroska."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/CurtisLeeBolin/avtc"
+"Bug Tracker" = "https://github.com/CurtisLeeBolin/avtc/issues"
+
+[project.scripts]
+avtc = "avtc:main"
