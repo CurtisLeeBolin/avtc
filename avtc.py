@@ -76,11 +76,10 @@ class AvtcCommon:
 
     def printOnSameLine(self, line):
         columns, lines = os.get_terminal_size()
+        clear_line_string = ' ' * columns
         line = line.replace('\n', '')
         line = line[:columns]
-        clear_line_string = ' ' * columns
-        print(f'\r{clear_line_string}', end='')
-        print(f'\r{line}', end='')
+        print(f'\r{clear_line_string}\r{line}', end='')
 
     def runSubprocess(self, command):
         with subprocess.Popen(
