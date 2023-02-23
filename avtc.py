@@ -74,16 +74,21 @@ class AvtcCommon:
                 return True
         return False
 
+    def printOnSameLine(self, line):
+        columns, lines = os.get_terminal_size()
+        line = line.replace('\n', '')
+        line = line[:columns]
+        clear_line_string = ' ' * columns
+        print(f'\r{clear_line_string}', end='')
+        print(f'\r{line}', end='')
+
     def runSubprocess(self, command):
         with subprocess.Popen(
             command, stderr=subprocess.PIPE, universal_newlines=True
         ) as p:
             stderrList = ['']*100
             for line in p.stderr:
-                columns, lines = os.get_terminal_size()
-                output = line[:-1]
-                output = output[:columns]
-                print(f'\r\033[K{output}', end='')
+                self.printOnSameLine(line)
                 del stderrList[0]
                 stderrList.append(line)
             print()
