@@ -28,7 +28,7 @@ import subprocess
 import time
 
 
-class AvtcCommon:
+class AVTC:
     # list of file extentions to find
     fileExtList = [
         '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
@@ -46,7 +46,6 @@ class AvtcCommon:
         self.crop = crop
         self.deinterlace = deinterlace
         self.transcodeForce = transcodeForce
-        return None
 
     def run(self):
         self.mkIODirs(self.workingDir)
@@ -57,7 +56,6 @@ class AvtcCommon:
                     self.transcode(
                         file, fileName, self.crop, self.deinterlace,
                         self.transcodeForce)
-        return None
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -103,7 +101,6 @@ class AvtcCommon:
         for dir in [self.inputDir, self.outputDir]:
             if not os.path.exists(dir):
                 os.mkdir(f'{workingDir}/{dir}', 0o0755)
-        return None
 
     def transcode(self, file, fileName, crop, deinterlace, transcodeForce):
         inputFile = f'{self.inputDir}/{file}'
@@ -290,7 +287,6 @@ class AvtcCommon:
         else:
             self.writeErrorFile(errorFile, transcodeArgs, stderrList)
             print(f'{time.strftime("%X")} Error: transcoding stopped\n')
-        return None
 
 
 def main():
@@ -332,7 +328,7 @@ def main():
         fileList = os.listdir(workingDir)
         fileList.sort()
 
-    tc = AvtcCommon(
+    tc = AVTC(
         workingDir, fileList, args.crop, args.deinterlace, args.transcode)
     tc.run()
 
