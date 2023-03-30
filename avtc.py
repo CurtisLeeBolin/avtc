@@ -51,10 +51,10 @@ class AVTC:
         self.mkIODirs(self.workingDir)
         for file in self.fileList:
             if os.path.isfile(file):
-                fileName, fileExtension = os.path.splitext(file)
-                if self.checkFileType(fileExtension):
+                filename, fileExt = os.path.splitext(file)
+                if self.checkFileType(fileExt):
                     self.transcode(
-                        file, fileName, self.crop, self.deinterlace,
+                        file, filename, self.crop, self.deinterlace,
                         self.transcodeForce)
 
     def checkFileType(self, fileExtension):
@@ -102,15 +102,15 @@ class AVTC:
             if not os.path.exists(dir):
                 os.mkdir(f'{workingDir}/{dir}', 0o0755)
 
-    def transcode(self, file, fileName, crop, deinterlace, transcodeForce):
+    def transcode(self, file, filename, crop, deinterlace, transcodeForce):
         inputFile = f'{self.inputDir}/{file}'
-        outputFile = f'{self.outputDir}/{fileName}.mkv'
+        outputFile = f'{self.outputDir}/{filename}.mkv'
         outputFilePart = f'{outputFile}.part'
         errorFile = f'{outputFile}.error'
         timeSpace = '        '
         os.rename(file, inputFile)
 
-        print(time.strftime('%X'), ' Analyzing \'', fileName, '\'', sep='')
+        print(time.strftime('%X'), ' Analyzing \'', filename, '\'', sep='')
         timeStarted = int(time.time())
 
         transcodeArgs = ['ffprobe', '-hide_banner', '-i', inputFile]
@@ -272,7 +272,7 @@ class AVTC:
         transcodeArgs.extend(audioList)
         transcodeArgs.extend(subtitleList)
         transcodeArgs.extend([
-            '-map_metadata', '-1', '-metadata', f'title={fileName}',
+            '-map_metadata', '-1', '-metadata', f'title={filename}',
             '-max_muxing_queue_size', '1024', '-y', '-f', 'matroska',
             outputFilePart])
         transcodeArgs = list(filter(None, transcodeArgs))
