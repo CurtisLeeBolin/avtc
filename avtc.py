@@ -59,18 +59,10 @@ class AVTC:
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
-        result = False
-        for ext in self.fileExtList:
-            if (ext == fileExtension):
-                result = True
-                break
-        return result
+        return any((ext == fileExtension) for ext in self.fileExtList)
 
     def checkForImage(self, videoString):
-        for each in self.imageTypeList:
-            if each in videoString:
-                return True
-        return False
+        return any(each in videoString for each in self.imageTypeList)
 
     def printOnSameLine(self, line):
         columns, lines = os.get_terminal_size()
@@ -260,13 +252,11 @@ class AVTC:
         print(timeSpace, 'Transcoding Started')
 
         transcodeArgs = []
-        if not videoFilterList:
-            transcodeArgs = [
-                'ffmpeg', '-i', inputFile]
-        else:
-            transcodeArgs = [
-                'ffmpeg', '-i', inputFile,
-                '-filter:v', ','.join(videoFilterList)]
+        transcodeArgs = (
+            ['ffmpeg', '-i', inputFile, '-filter:v', ','.join(videoFilterList)]
+            if videoFilterList
+            else ['ffmpeg', '-i', inputFile]
+        )
         transcodeArgs.extend(mapList)
         transcodeArgs.extend(videoList)
         transcodeArgs.extend(audioList)
