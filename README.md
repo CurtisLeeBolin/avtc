@@ -14,7 +14,7 @@ Documentation
 #### To install directly from GitHub
 
 ```
-$ python -m pip install 'git+https://github.com/CurtisLeeBolin/avtc'
+$ python -m pip install git+https://github.com/CurtisLeeBolin/avtc.git
 ```
 
 #### Or download, extract, and install
