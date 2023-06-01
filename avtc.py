@@ -174,7 +174,7 @@ class AVTC:
                             stream) is not None):
                         audioBitRate = '128k'
                     elif (re.search(
-                            '(6.1,7.0,7.1,octagonal,hexadecagonal)',
+                            '(6.1|7.0|7.1|octagonal|hexadecagonal)',
                             stream) is not None):
                         audioBitRate = '256k'
                     if re.search(r'5.1\(side\)', stream) is not None:
