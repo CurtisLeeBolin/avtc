@@ -102,6 +102,12 @@ class AVTC:
             if not os.path.exists(dir):
                 os.mkdir(f'{workingDir}/{dir}', 0o0755)
 
+    def setMetadata(self, file, title):
+        args = [
+            'mkvpropedit', file, '--tags', 'all:',
+            '--edit', 'info', '--set', f'title={title}' ]
+        return self.runSubprocess(args)
+
     def transcode(self, file, filename, crop, deinterlace, transcodeForce):
         inputFile = f'{self.inputDir}/{file}'
         outputFile = f'{self.outputDir}/{filename}.mkv'
@@ -272,9 +278,8 @@ class AVTC:
         transcodeArgs.extend(audioList)
         transcodeArgs.extend(subtitleList)
         transcodeArgs.extend([
-            '-map_metadata', '-1', '-metadata', f'title={filename}',
-            '-max_muxing_queue_size', '1024', '-y', '-f', 'matroska',
-            outputFilePart])
+            '-max_muxing_queue_size', '1024',
+            '-y', '-f', 'matroska', outputFilePart])
         transcodeArgs = list(filter(None, transcodeArgs))
 
         returncode, stderrList = self.runSubprocess(transcodeArgs)
@@ -282,7 +287,9 @@ class AVTC:
             timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
             print(
                 f'{time.strftime("%X")} Transcoding completed in',
-                f'{datetime.timedelta(seconds=timeCompletedTranscoding)}\n')
+                f'{datetime.timedelta(seconds=timeCompletedTranscoding)}')
+            print(f'{timeSpace} Setting Metadata')
+            self.setMetadata(outputFilePart, filename)
             os.rename(outputFilePart, outputFile)
         else:
             self.writeErrorFile(errorFile, transcodeArgs, stderrList)

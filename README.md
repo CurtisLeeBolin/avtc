@@ -24,6 +24,10 @@ $ cd avtc
 $ python -m pip install .
 ```
 
+#### Dependencies
+  - ffmpeg
+  - mkvpropedit (mkvtoolnix)
+
 #### To view help
 
 ```
