@@ -83,7 +83,7 @@ class AVTC:
         with subprocess.Popen(
             command, stderr=subprocess.PIPE, universal_newlines=True
         ) as p:
-            stderrList = ['']*100
+            stderrList = ['']*256
             for line in p.stderr:
                 self.printOnSameLine(line)
                 del stderrList[0]
