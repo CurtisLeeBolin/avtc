@@ -114,186 +114,191 @@ class AVTC:
         outputFilePart = f'{outputFile}.part'
         errorFile = f'{outputFile}.error'
         timeSpace = '        '
-        os.rename(file, inputFile)
 
-        print(time.strftime('%X'), ' Analyzing \'', filename, '\'', sep='')
-        timeStarted = int(time.time())
+        if not os.path.isfile(f'{file}.lock'):
+            with open(f'{file}.lock', 'w') as f:
+                pass
 
-        transcodeArgs = ['ffprobe', '-hide_banner', '-i', inputFile]
-        returncode, stderrList = self.runSubprocess(transcodeArgs)
-        if returncode != 0:
-            self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+            print(time.strftime('%X'), ' Analyzing \'', filename, '\'', sep='')
+            timeStarted = int(time.time())
 
-        videoCopy = False
-        streamList = [x for x in stderrList if 'Stream #0' in x]
-        stderrData = ''.join(stderrList)
-        mapList = []
-        videoList = []
-        audioList = []
-        subtitleList = []
-        videoStreamNumber = 0
-        audioStreamNumber = 0
-        subtitleStreamNumber = 0
-        input_w = 0
-        input_h = 0
-        w = 0
-        h = 0
-        for stream in streamList:
-            if 'Video' in stream:
-                if not self.checkForImage(stream):
+            transcodeArgs = ['ffprobe', '-hide_banner', '-i', file]
+            returncode, stderrList = self.runSubprocess(transcodeArgs)
+            if returncode != 0:
+                self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+
+            videoCopy = False
+            streamList = [x for x in stderrList if 'Stream #0' in x]
+            stderrData = ''.join(stderrList)
+            mapList = []
+            videoList = []
+            audioList = []
+            subtitleList = []
+            videoStreamNumber = 0
+            audioStreamNumber = 0
+            subtitleStreamNumber = 0
+            input_w = 0
+            input_h = 0
+            w = 0
+            h = 0
+            for stream in streamList:
+                if 'Video' in stream:
+                    if not self.checkForImage(stream):
+                        result = re.findall(r'Stream #0:(\d+)', stream)
+                        mapList.extend(['-map', f'0:{result[0]}'])
+                        if (not transcodeForce and not deinterlace
+                                and re.search('(h265|hevc)', stream) is not None):
+                            videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
+                            videoCopy = True
+                        else:
+                            videoList.extend(
+                                [f'-c:v:{videoStreamNumber}', 'libx265'])
+                        videoStreamNumber = videoStreamNumber + 1
+                        resolution = re.findall(r'Video: .*? (\d\d+x\d+)',
+                                                stream)[0]
+                        if resolution[-1] == ',':
+                            resolution = resolution[:-1]
+                        resolutionList = resolution.split('x')
+                        input_w = int(resolutionList[0])
+                        input_h = int(resolutionList[1])
+                elif 'Audio' in stream:
                     result = re.findall(r'Stream #0:(\d+)', stream)
                     mapList.extend(['-map', f'0:{result[0]}'])
-                    if (not transcodeForce and not deinterlace
-                            and re.search('(h265|hevc)', stream) is not None):
-                        videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
-                        videoCopy = True
+                    if 'opus' in stream:
+                        audioList.extend([f'-c:a:{audioStreamNumber}', 'copy'])
                     else:
-                        videoList.extend(
-                            [f'-c:v:{videoStreamNumber}', 'libx265'])
-                    videoStreamNumber = videoStreamNumber + 1
-                    resolution = re.findall(r'Video: .*? (\d\d+x\d+)',
-                                            stream)[0]
-                    if resolution[-1] == ',':
-                        resolution = resolution[:-1]
-                    resolutionList = resolution.split('x')
-                    input_w = int(resolutionList[0])
-                    input_h = int(resolutionList[1])
-            elif 'Audio' in stream:
-                result = re.findall(r'Stream #0:(\d+)', stream)
-                mapList.extend(['-map', f'0:{result[0]}'])
-                if 'opus' in stream:
-                    audioList.extend([f'-c:a:{audioStreamNumber}', 'copy'])
-                else:
-                    audioBitRate = '256k'
-                    if re.search('mono', stream) is not None:
-                        audioBitRate = '48k'
-                    elif re.search('(stereo|downmix)', stream) is not None:
-                        audioBitRate = '96k'
-                    elif (re.search(
-                            '(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
-                            stream) is not None):
-                        audioBitRate = '128k'
-                    elif (re.search(
-                            '(6.1|7.0|7.1|octagonal|hexadecagonal)',
-                            stream) is not None):
                         audioBitRate = '256k'
-                    if re.search(r'5.1\(side\)', stream) is not None:
+                        if re.search('mono', stream) is not None:
+                            audioBitRate = '48k'
+                        elif re.search('(stereo|downmix)', stream) is not None:
+                            audioBitRate = '96k'
+                        elif (re.search(
+                                '(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
+                                stream) is not None):
+                            audioBitRate = '128k'
+                        elif (re.search(
+                                '(6.1|7.0|7.1|octagonal|hexadecagonal)',
+                                stream) is not None):
+                            audioBitRate = '256k'
+                        if re.search(r'5.1\(side\)', stream) is not None:
+                            audioList.extend([
+                                f'-filter:a:{audioStreamNumber}',
+                                'aformat=channel_layouts=5.1'])
+                        elif re.search(r'5.0\(side\)', stream) is not None:
+                            audioList.extend([
+                                f'-filter:a:{audioStreamNumber}',
+                                'aformat=channel_layouts=5.0'])
                         audioList.extend([
-                            f'-filter:a:{audioStreamNumber}',
-                            'aformat=channel_layouts=5.1'])
-                    elif re.search(r'5.0\(side\)', stream) is not None:
-                        audioList.extend([
-                            f'-filter:a:{audioStreamNumber}',
-                            'aformat=channel_layouts=5.0'])
-                    audioList.extend([
-                        f'-c:a:{audioStreamNumber}', 'libopus',
-                        f'-b:a:{audioStreamNumber}', audioBitRate])
-                audioStreamNumber = audioStreamNumber + 1
-            elif 'Subtitle' in stream:
-                result = re.findall(r'Stream #0:(\d+)', stream)
-                mapList.extend(['-map', f'0:{result[0]}'])
-                if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
-                    subtitleList.extend(
-                        [f'-c:s:{subtitleStreamNumber}', 'ass'])
-                else:
-                    subtitleList.extend(
-                        [f'-c:s:{subtitleStreamNumber}', 'copy'])
-                subtitleStreamNumber = subtitleStreamNumber + 1
+                            f'-c:a:{audioStreamNumber}', 'libopus',
+                            f'-b:a:{audioStreamNumber}', audioBitRate])
+                    audioStreamNumber = audioStreamNumber + 1
+                elif 'Subtitle' in stream:
+                    result = re.findall(r'Stream #0:(\d+)', stream)
+                    mapList.extend(['-map', f'0:{result[0]}'])
+                    if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
+                        subtitleList.extend(
+                            [f'-c:s:{subtitleStreamNumber}', 'ass'])
+                    else:
+                        subtitleList.extend(
+                            [f'-c:s:{subtitleStreamNumber}', 'copy'])
+                    subtitleStreamNumber = subtitleStreamNumber + 1
 
-        durationList = re.findall('Duration: (.*?),', stderrData)
-        duration = 'N/A'
-        durationSplitList = None
-        if durationList:
-            duration = durationList[-1]
-            durationSplitList = duration.split(':')
-        videoFilterList = []
-        if not videoCopy:
-            if deinterlace:
-                videoFilterList.append('bwdif')
+            durationList = re.findall('Duration: (.*?),', stderrData)
+            duration = 'N/A'
+            durationSplitList = None
+            if durationList:
+                duration = durationList[-1]
+                durationSplitList = duration.split(':')
+            videoFilterList = []
+            if not videoCopy:
+                if deinterlace:
+                    videoFilterList.append('bwdif')
 
-            if crop:
-                cropDetectVideoFilterList = list(videoFilterList)
-                if duration != 'N/A':
-                    durationSec = (
-                        60 * 60 * int(durationSplitList[0]) +
-                        60 * int(durationSplitList[1]) +
-                        float(durationSplitList[2]))
-                    if durationSec > 60:
-                        cropDetectStart = str(
-                            datetime.timedelta(seconds=(durationSec / 10)))
-                        cropDetectDuration = str(
-                            datetime.timedelta(seconds=(durationSec / 100)))
+                if crop:
+                    cropDetectVideoFilterList = list(videoFilterList)
+                    if duration != 'N/A':
+                        durationSec = (
+                            60 * 60 * int(durationSplitList[0]) +
+                            60 * int(durationSplitList[1]) +
+                            float(durationSplitList[2]))
+                        if durationSec > 60:
+                            cropDetectStart = str(
+                                datetime.timedelta(seconds=(durationSec / 10)))
+                            cropDetectDuration = str(
+                                datetime.timedelta(seconds=(durationSec / 100)))
+                        else:
+                            cropDetectStart = '0'
+                            cropDetectDuration = '60'
                     else:
                         cropDetectStart = '0'
                         cropDetectDuration = '60'
-                else:
-                    cropDetectStart = '0'
-                    cropDetectDuration = '60'
 
-                cropDetectVideoFilterList.append('cropdetect')
+                    cropDetectVideoFilterList.append('cropdetect')
 
-                transcodeArgs = [
-                    'ffmpeg', '-hide_banner', '-nostats', '-ss',
-                    cropDetectStart, '-t', cropDetectDuration, '-i', inputFile,
-                    '-filter:v', ','.join(cropDetectVideoFilterList),
-                    '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
+                    transcodeArgs = [
+                        'ffmpeg', '-hide_banner', '-nostats', '-ss',
+                        cropDetectStart, '-t', cropDetectDuration, '-i', file,
+                        '-filter:v', ','.join(cropDetectVideoFilterList),
+                        '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
 
-                returncode, stderrList = self.runSubprocess(transcodeArgs)
-                if returncode != 0:
-                    self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+                    returncode, stderrList = self.runSubprocess(transcodeArgs)
+                    if returncode != 0:
+                        self.writeErrorFile(errorFile, transcodeArgs, stderrList)
 
-                stderrData = ''.join(stderrList)
+                    stderrData = ''.join(stderrList)
 
-                crop = re.findall('crop=(.*?)\n', stderrData)[-1]
-                cropList = crop.split(':')
-                w = int(cropList[0])
-                h = int(cropList[1])
+                    crop = re.findall('crop=(.*?)\n', stderrData)[-1]
+                    cropList = crop.split(':')
+                    w = int(cropList[0])
+                    h = int(cropList[1])
 
-                videoFilterList.append(f'crop={crop}')
+                    videoFilterList.append(f'crop={crop}')
 
-        timeCompletedCrop = int(time.time()) - timeStarted
-        print(
-            f'{time.strftime("%X")} Analysis completed in',
-            f'{datetime.timedelta(seconds=timeCompletedCrop)}')
-        print(f'{timeSpace} Duration: {duration}')
-        print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
-        if crop and not videoCopy:
-            print(f'{timeSpace} Output Resolution: {w}x{h}')
-        else:
-            print(f'{timeSpace} Output Resolution: {input_w}x{input_h}')
-
-        timeStartTranscoding = int(time.time())
-        print(timeSpace, 'Transcoding Started')
-
-        transcodeArgs = []
-        if not videoFilterList:
-            transcodeArgs = [
-                'ffmpeg', '-i', inputFile]
-        else:
-            transcodeArgs = [
-                'ffmpeg', '-i', inputFile,
-                '-filter:v', ','.join(videoFilterList)]
-        transcodeArgs.extend(mapList)
-        transcodeArgs.extend(videoList)
-        transcodeArgs.extend(audioList)
-        transcodeArgs.extend(subtitleList)
-        transcodeArgs.extend([
-            '-max_muxing_queue_size', '1024',
-            '-y', '-f', 'matroska', outputFilePart])
-        transcodeArgs = list(filter(None, transcodeArgs))
-
-        returncode, stderrList = self.runSubprocess(transcodeArgs)
-        if returncode == 0:
-            timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
+            timeCompletedCrop = int(time.time()) - timeStarted
             print(
-                f'{time.strftime("%X")} Transcoding completed in',
-                f'{datetime.timedelta(seconds=timeCompletedTranscoding)}')
-            print(f'{timeSpace} Setting Metadata')
-            self.setMetadata(outputFilePart, filename)
-            os.rename(outputFilePart, outputFile)
-        else:
-            self.writeErrorFile(errorFile, transcodeArgs, stderrList)
-            print(f'{time.strftime("%X")} Error: transcoding stopped\n')
+                f'{time.strftime("%X")} Analysis completed in',
+                f'{datetime.timedelta(seconds=timeCompletedCrop)}')
+            print(f'{timeSpace} Duration: {duration}')
+            print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
+            if crop and not videoCopy:
+                print(f'{timeSpace} Output Resolution: {w}x{h}')
+            else:
+                print(f'{timeSpace} Output Resolution: {input_w}x{input_h}')
+
+            timeStartTranscoding = int(time.time())
+            print(timeSpace, 'Transcoding Started')
+
+            transcodeArgs = []
+            if not videoFilterList:
+                transcodeArgs = [
+                    'ffmpeg', '-i', file]
+            else:
+                transcodeArgs = [
+                    'ffmpeg', '-i', file,
+                    '-filter:v', ','.join(videoFilterList)]
+            transcodeArgs.extend(mapList)
+            transcodeArgs.extend(videoList)
+            transcodeArgs.extend(audioList)
+            transcodeArgs.extend(subtitleList)
+            transcodeArgs.extend([
+                '-max_muxing_queue_size', '1024',
+                '-y', '-f', 'matroska', outputFilePart])
+            transcodeArgs = list(filter(None, transcodeArgs))
+
+            returncode, stderrList = self.runSubprocess(transcodeArgs)
+            if returncode == 0:
+                os.remove(f'{file}.lock')
+                os.rename(file, inputFile)
+                timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
+                print(
+                    f'{time.strftime("%X")} Transcoding completed in',
+                    f'{datetime.timedelta(seconds=timeCompletedTranscoding)}')
+                print(f'{timeSpace} Setting Metadata')
+                self.setMetadata(outputFilePart, filename)
+                os.rename(outputFilePart, outputFile)
+            else:
+                self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+                print(f'{time.strftime("%X")} Error: transcoding stopped\n')
 
 
 def main():
