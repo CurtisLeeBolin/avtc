@@ -316,8 +316,8 @@ def main():
     parser.add_argument(
         '-d', '--directory', dest='directory', help='A directory')
     parser.add_argument(
-        '-f', '--filelist', dest='fileList', help=(
-            'A comma separated list of files in the current directory'))
+        '-f', '--filelist', dest='fileList', nargs='*', help=(
+            'File list in the current directory'))
     parser.add_argument(
         '-t', '--transcode', help='Force file/s to be transcoded',
         action='store_true')
@@ -330,7 +330,7 @@ def main():
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
-        fileList = args.fileList.split(',')
+        fileList = args.fileList
     elif (args.directory):
         workingDir = args.directory
         fileList = os.listdir(workingDir)

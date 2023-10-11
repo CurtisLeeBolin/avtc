@@ -43,7 +43,7 @@ options:
   -d DIRECTORY, --directory DIRECTORY
                         A directory
   -f FILELIST, --filelist FILELIST
-                        A comma separated list of files in the current directory
+                        File list in the current directory
   -t, --transcode       Force file/s to be transcoded
 
 Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
