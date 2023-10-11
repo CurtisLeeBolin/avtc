@@ -104,7 +104,7 @@ class AVTC:
 
     def setMetadata(self, file, title):
         args = [
-            'mkvpropedit', file, '--tags', 'all:',
+            'mkvpropedit', f'./{file}', '--tags', 'all:',
             '--edit', 'info', '--set', f'title={title}' ]
         return self.runSubprocess(args)
 
@@ -237,7 +237,7 @@ class AVTC:
 
                     transcodeArgs = [
                         'ffmpeg', '-hide_banner', '-nostats', '-ss',
-                        cropDetectStart, '-t', cropDetectDuration, '-i', file,
+                        cropDetectStart, '-t', cropDetectDuration, '-i', f'./{file}',
                         '-filter:v', ','.join(cropDetectVideoFilterList),
                         '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
 
@@ -271,10 +271,10 @@ class AVTC:
             transcodeArgs = []
             if not videoFilterList:
                 transcodeArgs = [
-                    'ffmpeg', '-i', file]
+                    'ffmpeg', '-i', f'./{file}']
             else:
                 transcodeArgs = [
-                    'ffmpeg', '-i', file,
+                    'ffmpeg', '-i', f'./{file}',
                     '-filter:v', ','.join(videoFilterList)]
             transcodeArgs.extend(mapList)
             transcodeArgs.extend(videoList)
