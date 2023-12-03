@@ -48,7 +48,6 @@ class AVTC:
         self.transcodeForce = transcodeForce
 
     def run(self):
-        self.mkIODirs(self.workingDir)
         for file in self.fileList:
             if os.path.isfile(file):
                 filename, fileExt = os.path.splitext(file)
@@ -96,11 +95,6 @@ class AVTC:
         with open(errorFile, 'w', encoding='utf-8') as f:
             stderr = ''.join(stderrList)
             f.write(f'{transcodeArgs}\n\n{stderr}')
-
-    def mkIODirs(self, workingDir):
-        for dir in [self.inputDir, self.outputDir]:
-            if not os.path.exists(dir):
-                os.mkdir(f'{workingDir}/{dir}', 0o0755)
 
     def setMetadata(self, file, title):
         args = [
@@ -285,9 +279,11 @@ class AVTC:
                 '-y', '-f', 'matroska', outputFilePart])
             transcodeArgs = list(filter(None, transcodeArgs))
 
+            os.makedirs(self.outputDir, exist_ok=True)
             returncode, stderrList = self.runSubprocess(transcodeArgs)
             if returncode == 0:
                 os.remove(f'{file}.lock')
+                os.makedirs(self.inputDir, exist_ok=True)
                 os.rename(file, inputFile)
                 timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
                 print(
