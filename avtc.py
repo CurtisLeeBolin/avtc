@@ -284,7 +284,6 @@ class AVTC:
             if returncode == 0:
                 os.remove(f'{file}.lock')
                 os.makedirs(self.inputDir, exist_ok=True)
-                os.rename(file, inputFile)
                 timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
                 print(
                     f'{time.strftime("%X")} Transcoding completed in',
@@ -292,6 +291,7 @@ class AVTC:
                 print(f'{timeSpace} Setting Metadata')
                 self.setMetadata(outputFilePart, filename)
                 os.rename(outputFilePart, outputFile)
+                os.rename(file, inputFile)
             else:
                 self.writeErrorFile(errorFile, transcodeArgs, stderrList)
                 print(f'{time.strftime("%X")} Error: transcoding stopped\n')
