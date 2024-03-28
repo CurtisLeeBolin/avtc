@@ -116,7 +116,7 @@ class AVTC:
             print(time.strftime('%X'), ' Analyzing \'', filename, '\'', sep='')
             timeStarted = int(time.time())
 
-            transcodeArgs = ['ffprobe', '-hide_banner', '-i', file]
+            transcodeArgs = ['ffprobe', '-hide_banner', '-i', f'./{file}']
             returncode, stderrList = self.runSubprocess(transcodeArgs)
             if returncode != 0:
                 self.writeErrorFile(errorFile, transcodeArgs, stderrList)
