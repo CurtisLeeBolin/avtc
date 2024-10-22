@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = [
   { name="Curtis Lee Bolin", email="CurtisLeeBolin@gmail.com" },
 ]
-description = "Audio Video TransCoder - Batch transcodes Audio Video files to HEVC/Opus/ASS/Matroska."
+description = "Audio Video TransCoder - Batch transcodes Audio Video files to AV1/Opus/WebVTT/WebM."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
