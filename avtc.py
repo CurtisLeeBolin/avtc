@@ -2,7 +2,7 @@
 #
 #  avtc.py
 #
-#  Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+#  Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -305,7 +305,7 @@ def main():
         prog='avtc.py',
         description='Audio Video TransCoder',
         epilog=(
-            'Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+            'Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
     parser.add_argument(
         '--crop', help='Auto Crop Videos', action='store_true')
     parser.add_argument(
