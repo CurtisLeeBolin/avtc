@@ -1,9 +1,9 @@
 avtc
 ====
 
-**A**udio **V**ideo **T**rans**C**oder - Batch transcodes Audio Video files to HEVC/Opus/ASS/Matroska.
+**A**udio **V**ideo **T**rans**C**oder - Batch transcodes Audio Video files to AV1/Opus/WebVTT/WebM.
 
-Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
@@ -32,7 +32,7 @@ $ python -m pip install .
 
 ```
 $ avtc --help
-usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [-f FILELIST] [-t]
+usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [-f [FILELIST ...]] [-t]
 
 Audio Video TransCoder
 
@@ -42,11 +42,11 @@ options:
   --deinterlace         Deinterlace Videos
   -d DIRECTORY, --directory DIRECTORY
                         A directory
-  -f FILELIST, --filelist FILELIST
+  -f [FILELIST ...], --filelist [FILELIST ...]
                         File list in the current directory
   -t, --transcode       Force file/s to be transcoded
 
-Copyright 2013-2023 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
 #### Change to a directory with videos you want to transcode
@@ -80,8 +80,8 @@ encoded 130219 frames in 4511.67s (28.86 fps), 390.06 kb/s, Avg QP:32.91
 
 ### Output Format
 
-* Video: HEVC (a.k.a. H.265 or MPEG-H Part 2)
+* Video: AV1 (AOMedia Video 1)
 * Audio: Opus
-* Subtitles: ASS (SubStation Alph) text or Copied from Source (image subtitles)
+* Subtitles: WebVTT (Web Video Text Tracks)
 * Metadata: `title` is set to the filename minus the file extension
-* Container: Matroska
+* Container: WebM
