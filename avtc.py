@@ -104,7 +104,7 @@ class AVTC:
 
     def transcode(self, file, filename, crop, deinterlace, transcodeForce):
         inputFile = f'{self.inputDir}/{file}'
-        outputFile = f'{self.outputDir}/{filename}.mkv'
+        outputFile = f'{self.outputDir}/{filename}.webm'
         outputFilePart = f'{outputFile}.part'
         errorFile = f'{outputFile}.error'
         timeSpace = '        '
@@ -141,12 +141,12 @@ class AVTC:
                         result = re.findall(r'Stream #0:(\d+)', stream)
                         mapList.extend(['-map', f'0:{result[0]}'])
                         if (not transcodeForce and not deinterlace
-                                and re.search('(h265|hevc)', stream) is not None):
+                                and re.search('av1', stream) is not None):
                             videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
                             videoCopy = True
                         else:
                             videoList.extend(
-                                [f'-c:v:{videoStreamNumber}', 'libx265'])
+                                [f'-c:v:{videoStreamNumber}', 'libsvtav1'])
                         videoStreamNumber = videoStreamNumber + 1
                         resolution = re.findall(r'Video: .*? (\d\d+x\d+)',
                                                 stream)[0]
@@ -188,13 +188,14 @@ class AVTC:
                     audioStreamNumber = audioStreamNumber + 1
                 elif 'Subtitle' in stream:
                     result = re.findall(r'Stream #0:(\d+)', stream)
-                    mapList.extend(['-map', f'0:{result[0]}'])
-                    if re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
-                        subtitleList.extend(
-                            [f'-c:s:{subtitleStreamNumber}', 'ass'])
-                    else:
+                    if 'webvtt' in stream:
+                        mapList.extend(['-map', f'0:{result[0]}'])
                         subtitleList.extend(
                             [f'-c:s:{subtitleStreamNumber}', 'copy'])
+                    elif re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
+                        mapList.extend(['-map', f'0:{result[0]}'])
+                        subtitleList.extend(
+                            [f'-c:s:{subtitleStreamNumber}', 'webvtt'])
                     subtitleStreamNumber = subtitleStreamNumber + 1
 
             durationList = re.findall('Duration: (.*?),', stderrData)
