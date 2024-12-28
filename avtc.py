@@ -199,11 +199,17 @@ class AVTC:
                     subtitleStreamNumber = subtitleStreamNumber + 1
 
             durationList = re.findall('Duration: (.*?),', stderrData)
-            duration = 'N/A'
-            durationSplitList = None
-            if durationList:
-                duration = durationList[-1]
-                durationSplitList = duration.split(':')
+            if durationList is not None:
+                durationString = durationList[-1]
+                hours, minutes, seconds = durationString.split(':')
+                durationSeconds = (
+                    60 * 60 * int(hours) +
+                    60 * int(minutes) +
+                    float(seconds)
+                )
+            else:
+                durationString = 'N/A'
+                durationSeconds = 0
             videoFilterList = []
             if not videoCopy:
                 if deinterlace:
@@ -211,16 +217,12 @@ class AVTC:
 
                 if crop:
                     cropDetectVideoFilterList = list(videoFilterList)
-                    if duration != 'N/A':
-                        durationSec = (
-                            60 * 60 * int(durationSplitList[0]) +
-                            60 * int(durationSplitList[1]) +
-                            float(durationSplitList[2]))
-                        if durationSec > 60:
+                    if durationSeconds != 0:
+                        if durationSeconds > 60:
                             cropDetectStart = str(
-                                datetime.timedelta(seconds=(durationSec / 10)))
+                                datetime.timedelta(seconds=(durationSeconds / 10)))
                             cropDetectDuration = str(
-                                datetime.timedelta(seconds=(durationSec / 100)))
+                                datetime.timedelta(seconds=(durationSeconds / 100)))
                         else:
                             cropDetectStart = '0'
                             cropDetectDuration = '60'
@@ -253,7 +255,7 @@ class AVTC:
             print(
                 f'{time.strftime("%X")} Analysis completed in',
                 f'{datetime.timedelta(seconds=timeCompletedCrop)}')
-            print(f'{timeSpace} Duration: {duration}')
+            print(f'{timeSpace} Duration: {durationSeconds}')
             print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
             if crop and not videoCopy:
                 print(f'{timeSpace} Output Resolution: {w}x{h}')
