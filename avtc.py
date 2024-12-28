@@ -83,11 +83,12 @@ class AVTC:
             command, stderr=subprocess.PIPE, universal_newlines=True
         ) as p:
             stderrList = ['']*256
-            for line in p.stderr:
-                self.printOnSameLine(line)
-                del stderrList[0]
-                stderrList.append(line)
-            print()
+            if p.stderr is not None:
+                for line in p.stderr:
+                    self.printOnSameLine(line)
+                    del stderrList[0]
+                    stderrList.append(line)
+                print()
             p.wait()
             return (p.returncode, stderrList)
 
