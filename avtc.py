@@ -315,7 +315,7 @@ class AVTC:
                 f'{time.strftime("%X")} Analysis completed in',
                 f'{datetime.timedelta(seconds=timeCompletedCrop)}'
             )
-            print(f'{timeSpace} Duration: {durationSeconds}')
+            print(f'{timeSpace} Duration: {durationString}')
             print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
             if crop and not videoCopy:
                 print(f'{timeSpace} Output Resolution: {w}x{h}')
