@@ -33,14 +33,20 @@ class AVTC:
     fileExtList = [
         '3g2', '3gp', 'asf', 'avi', 'divx', 'flv', 'm2ts', 'm4a', 'm4v', 'mj2',
         'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'nuv', 'ogg', 'ogm', 'ogv',
-        'rm', 'rmvb', 'ts', 'vob', 'webm', 'wmv']
+        'rm', 'rmvb', 'ts', 'vob', 'webm', 'wmv'
+    ]
     imageTypeList = ['mjpeg', 'png']
     inputDir = '0in'
     outputDir = '0out'
 
     def __init__(
-            self, workingDir, fileList, crop=False, deinterlace=False,
-            transcodeForce=False):
+        self,
+        workingDir,
+        fileList,
+        crop=False,
+        deinterlace=False,
+        transcodeForce=False
+    ):
         self.workingDir = workingDir
         self.fileList = fileList
         self.crop = crop
@@ -53,8 +59,12 @@ class AVTC:
                 filename, fileExt = os.path.splitext(file)
                 if self.checkFileType(fileExt):
                     self.transcode(
-                        file, filename, self.crop, self.deinterlace,
-                        self.transcodeForce)
+                        file,
+                        filename,
+                        self.crop,
+                        self.deinterlace,
+                        self.transcodeForce
+                    )
 
     def checkFileType(self, fileExtension):
         fileExtension = fileExtension[1:].lower()
@@ -80,7 +90,9 @@ class AVTC:
 
     def runSubprocess(self, command):
         with subprocess.Popen(
-            command, stderr=subprocess.PIPE, universal_newlines=True
+            command,
+            stderr = subprocess.PIPE,
+            universal_newlines = True
         ) as p:
             stderrList = ['']*256
             if p.stderr is not None:
@@ -99,11 +111,22 @@ class AVTC:
 
     def setMetadata(self, file, title):
         args = [
-            'mkvpropedit', f'./{file}', '--tags', 'all:',
-            '--edit', 'info', '--set', f'title={title}' ]
+            'mkvpropedit',
+            f'./{file}',
+            '--tags', 'all:',
+            '--edit', 'info',
+            '--set', f'title={title}'
+        ]
         return self.runSubprocess(args)
 
-    def transcode(self, file, filename, crop, deinterlace, transcodeForce):
+    def transcode(
+        self,
+        file,
+        filename,
+        crop,
+        deinterlace,
+        transcodeForce
+    ):
         inputFile = f'{self.inputDir}/{file}'
         outputFile = f'{self.outputDir}/{filename}.webm'
         outputFilePart = f'{outputFile}.part'
@@ -141,16 +164,22 @@ class AVTC:
                     if not self.checkForImage(stream):
                         result = re.findall(r'Stream #0:(\d+)', stream)
                         mapList.extend(['-map', f'0:{result[0]}'])
-                        if (not transcodeForce and not deinterlace
-                                and re.search('av1', stream) is not None):
-                            videoList.extend([f'-c:v:{videoStreamNumber}', 'copy'])
+                        if (
+                            not transcodeForce and not deinterlace
+                            and re.search('av1', stream) is not None
+                        ):
+                            videoList.extend([
+                                f'-c:v:{videoStreamNumber}', 'copy'
+                            ])
                             videoCopy = True
                         else:
-                            videoList.extend(
-                                [f'-c:v:{videoStreamNumber}', 'libsvtav1'])
+                            videoList.extend([
+                                f'-c:v:{videoStreamNumber}', 'libsvtav1'
+                            ])
                         videoStreamNumber = videoStreamNumber + 1
-                        resolution = re.findall(r'Video: .*? (\d\d+x\d+)',
-                                                stream)[0]
+                        resolution = re.findall(
+                            r'Video: .*? (\d\d+x\d+)', stream
+                        )[0]
                         if resolution[-1] == ',':
                             resolution = resolution[:-1]
                         resolutionList = resolution.split('x')
@@ -167,36 +196,46 @@ class AVTC:
                             audioBitRate = '48k'
                         elif re.search('(stereo|downmix)', stream) is not None:
                             audioBitRate = '96k'
-                        elif (re.search(
-                                '(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
-                                stream) is not None):
+                        elif re.search(
+                            '(2.1|3.0|4.0|quad|5.0|4.1|5.1|6.0|hexagonal)',
+                            stream
+                        ) is not None:
                             audioBitRate = '128k'
-                        elif (re.search(
-                                '(6.1|7.0|7.1|octagonal|hexadecagonal)',
-                                stream) is not None):
+                        elif re.search(
+                            '(6.1|7.0|7.1|octagonal|hexadecagonal)',
+                            stream
+                        ) is not None:
                             audioBitRate = '256k'
                         if re.search(r'5.1\(side\)', stream) is not None:
                             audioList.extend([
                                 f'-filter:a:{audioStreamNumber}',
-                                'aformat=channel_layouts=5.1'])
+                                'aformat=channel_layouts=5.1'
+                            ])
                         elif re.search(r'5.0\(side\)', stream) is not None:
                             audioList.extend([
                                 f'-filter:a:{audioStreamNumber}',
-                                'aformat=channel_layouts=5.0'])
+                                'aformat=channel_layouts=5.0'
+                            ])
                         audioList.extend([
                             f'-c:a:{audioStreamNumber}', 'libopus',
-                            f'-b:a:{audioStreamNumber}', audioBitRate])
+                            f'-b:a:{audioStreamNumber}', audioBitRate
+                        ])
                     audioStreamNumber = audioStreamNumber + 1
                 elif 'Subtitle' in stream:
                     result = re.findall(r'Stream #0:(\d+)', stream)
                     if 'webvtt' in stream:
                         mapList.extend(['-map', f'0:{result[0]}'])
-                        subtitleList.extend(
-                            [f'-c:s:{subtitleStreamNumber}', 'copy'])
-                    elif re.search('(srt|ssa|subrip|mov_text)', stream) is not None:
+                        subtitleList.extend([
+                            f'-c:s:{subtitleStreamNumber}', 'copy'
+                        ])
+                    elif re.search(
+                        '(srt|ssa|subrip|mov_text)',
+                        stream
+                    ) is not None:
                         mapList.extend(['-map', f'0:{result[0]}'])
-                        subtitleList.extend(
-                            [f'-c:s:{subtitleStreamNumber}', 'webvtt'])
+                        subtitleList.extend([
+                            f'-c:s:{subtitleStreamNumber}', 'webvtt'
+                        ])
                     subtitleStreamNumber = subtitleStreamNumber + 1
 
             durationList = re.findall('Duration: (.*?),', stderrData)
@@ -221,9 +260,15 @@ class AVTC:
                     if durationSeconds != 0:
                         if durationSeconds > 60:
                             cropDetectStart = str(
-                                datetime.timedelta(seconds=(durationSeconds / 10)))
+                                datetime.timedelta(
+                                    seconds=(durationSeconds / 10)
+                                )
+                            )
                             cropDetectDuration = str(
-                                datetime.timedelta(seconds=(durationSeconds / 100)))
+                                datetime.timedelta(
+                                    seconds=(durationSeconds / 100)
+                                )
+                            )
                         else:
                             cropDetectStart = '0'
                             cropDetectDuration = '60'
@@ -234,14 +279,27 @@ class AVTC:
                     cropDetectVideoFilterList.append('cropdetect')
 
                     transcodeArgs = [
-                        'ffmpeg', '-hide_banner', '-nostats', '-ss',
-                        cropDetectStart, '-t', cropDetectDuration, '-i', f'./{file}',
+                        'ffmpeg',
+                        '-hide_banner',
+                        '-nostats',
+                        '-ss', cropDetectStart,
+                        '-t', cropDetectDuration,
+                        '-i', f'./{file}',
                         '-filter:v', ','.join(cropDetectVideoFilterList),
-                        '-an', '-sn', '-f', 'rawvideo', '-y', os.devnull]
+                        '-an',
+                        '-sn',
+                        '-f', 'rawvideo',
+                        '-y',
+                        os.devnull
+                    ]
 
                     returncode, stderrList = self.runSubprocess(transcodeArgs)
                     if returncode != 0:
-                        self.writeErrorFile(errorFile, transcodeArgs, stderrList)
+                        self.writeErrorFile(
+                            errorFile,
+                            transcodeArgs,
+                            stderrList
+                        )
 
                     stderrData = ''.join(stderrList)
 
@@ -255,7 +313,8 @@ class AVTC:
             timeCompletedCrop = int(time.time()) - timeStarted
             print(
                 f'{time.strftime("%X")} Analysis completed in',
-                f'{datetime.timedelta(seconds=timeCompletedCrop)}')
+                f'{datetime.timedelta(seconds=timeCompletedCrop)}'
+            )
             print(f'{timeSpace} Duration: {durationSeconds}')
             print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
             if crop and not videoCopy:
@@ -269,18 +328,25 @@ class AVTC:
             transcodeArgs = []
             if not videoFilterList:
                 transcodeArgs = [
-                    'ffmpeg', '-i', f'./{file}']
+                    'ffmpeg',
+                    '-i', f'./{file}'
+                ]
             else:
                 transcodeArgs = [
-                    'ffmpeg', '-i', f'./{file}',
-                    '-filter:v', ','.join(videoFilterList)]
+                    'ffmpeg',
+                    '-i', f'./{file}',
+                    '-filter:v', ','.join(videoFilterList)
+                ]
             transcodeArgs.extend(mapList)
             transcodeArgs.extend(videoList)
             transcodeArgs.extend(audioList)
             transcodeArgs.extend(subtitleList)
             transcodeArgs.extend([
                 '-max_muxing_queue_size', '1024',
-                '-y', '-f', 'matroska', outputFilePart])
+                '-y',
+                '-f', 'matroska',
+                outputFilePart
+            ])
             transcodeArgs = list(filter(None, transcodeArgs))
 
             os.makedirs(self.outputDir, exist_ok=True)
@@ -288,10 +354,13 @@ class AVTC:
             if returncode == 0:
                 os.remove(f'{file}.lock')
                 os.makedirs(self.inputDir, exist_ok=True)
-                timeCompletedTranscoding = int(time.time()) - timeStartTranscoding
+                timeCompletedTranscoding = (
+                    int(time.time()) - timeStartTranscoding
+                )
                 print(
                     f'{time.strftime("%X")} Transcoding completed in',
-                    f'{datetime.timedelta(seconds=timeCompletedTranscoding)}')
+                    f'{datetime.timedelta(seconds=timeCompletedTranscoding)}'
+                )
                 print(f'{timeSpace} Setting Metadata')
                 self.setMetadata(outputFilePart, filename)
                 os.rename(outputFilePart, outputFile)
@@ -305,28 +374,48 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        prog='avtc.py',
-        description='Audio Video TransCoder',
-        epilog=(
-            'Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'))
+        prog = 'avtc.py',
+        description = 'Audio Video TransCoder',
+        epilog = (
+            'Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'
+        )
+    )
     parser.add_argument(
-        '--crop', help='Auto Crop Videos', action='store_true')
+        '--crop',
+        help = 'Auto Crop Videos',
+        action = 'store_true'
+    )
     parser.add_argument(
-        '--deinterlace', help='Deinterlace Videos', action='store_true')
+        '--deinterlace',
+        help = 'Deinterlace Videos',
+        action = 'store_true'
+    )
     parser.add_argument(
-        '-d', '--directory', dest='directory', help='A directory')
+        '-d',
+        '--directory',
+        dest = 'directory',
+        help = 'A directory'
+    )
     parser.add_argument(
-        '-f', '--filelist', dest='fileList', nargs='*', help=(
-            'File list in the current directory'))
+        '-f',
+        '--filelist',
+        dest = 'fileList',
+        nargs = '*',
+        help = 'File list in the current directory'
+    )
     parser.add_argument(
-        '-t', '--transcode', help='Force file/s to be transcoded',
-        action='store_true')
+        '-t',
+        '--transcode',
+        help = 'Force file/s to be transcoded',
+        action = 'store_true'
+    )
     args = parser.parse_args()
 
     if (args.fileList and args.directory):
         print(
             'Arguments -f (--filelist) and -d (--directory) can not be ',
-            'used together')
+            'used together'
+        )
         exit(1)
     elif (args.fileList):
         workingDir = os.getcwd()
@@ -341,7 +430,12 @@ def main():
         fileList.sort()
 
     tc = AVTC(
-        workingDir, fileList, args.crop, args.deinterlace, args.transcode)
+        workingDir,
+        fileList,
+        args.crop,
+        args.deinterlace,
+        args.transcode
+    )
     tc.run()
 
 
