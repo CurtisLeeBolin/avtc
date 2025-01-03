@@ -94,7 +94,7 @@ class AVTC:
             stderr = subprocess.PIPE,
             universal_newlines = True
         ) as p:
-            stderrList = ['']*256
+            stderrList = ['']*1024
             if p.stderr is not None:
                 for line in p.stderr:
                     self.printOnSameLine(line)
