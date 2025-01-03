@@ -239,7 +239,7 @@ class AVTC:
                     subtitleStreamNumber = subtitleStreamNumber + 1
 
             durationList = re.findall('Duration: (.*?),', stderrData)
-            if durationList is not None:
+            if durationList != []:
                 durationString = durationList[-1]
                 hours, minutes, seconds = durationString.split(':')
                 durationSeconds = (
