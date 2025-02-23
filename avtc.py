@@ -25,7 +25,6 @@ import datetime
 import os
 import re
 import subprocess
-import time
 
 
 class AVTC:
@@ -88,6 +87,23 @@ class AVTC:
         line = line[:columns]
         print(f'\r{clear_line_string}\r{line}', end='')
 
+    def timedeltaFormat(self, delta):
+        """
+        Formats a string from datetime.timedelta to HH:MM:SS
+
+        datetime.timedelta does not support setting string format
+
+        >>> help(datetime.timedelta.__format__)
+        Help on method_descriptor:
+
+            __format__(self, format_spec, /) unbound builtins.object method
+            Default object formatter.
+
+            Return str(self) if format_spec is empty. Raise TypeError otherwise.
+        """
+        s = delta.total_seconds()
+        return f'{int(s/60/60 % 60):02}:{int(s/60 % 60):02}:{round(s % 60):02}'
+
     def runSubprocess(self, command):
         with subprocess.Popen(
             command,
@@ -131,14 +147,16 @@ class AVTC:
         outputFile = f'{self.outputDir}/{filename}.webm'
         outputFilePart = f'{outputFile}.part'
         errorFile = f'{outputFile}.error'
-        timeSpace = '        '
+        timeSpace = f'{" ":>9}'
 
         if not os.path.isfile(f'{file}.lock'):
             with open(f'{file}.lock', 'w') as f:
                 pass
 
-            print(time.strftime('%X'), ' Analyzing \'', filename, '\'', sep='')
-            timeStarted = int(time.time())
+            now = datetime.datetime.now()
+            print(f'{now:%H:%M:%S} Analyzing \'{filename}\'')
+
+            timeStarted = now
 
             transcodeArgs = ['ffprobe', '-hide_banner', '-i', f'./{file}']
             returncode, stderrList = self.runSubprocess(transcodeArgs)
@@ -256,26 +274,16 @@ class AVTC:
                     videoFilterList.append('bwdif')
 
                 if crop:
-                    cropDetectVideoFilterList = list(videoFilterList)
-                    if durationSeconds != 0:
-                        if durationSeconds > 60:
-                            cropDetectStart = str(
-                                datetime.timedelta(
-                                    seconds=(durationSeconds / 10)
-                                )
-                            )
-                            cropDetectDuration = str(
-                                datetime.timedelta(
-                                    seconds=(durationSeconds / 100)
-                                )
-                            )
-                        else:
-                            cropDetectStart = '0'
-                            cropDetectDuration = '60'
+                    if durationSeconds != 0 and durationSeconds > 60:
+                        start = datetime.timedelta(seconds=(durationSeconds / 10))
+                        cropDetectStart = f'{self.timedeltaFormat(start)}'
+                        duration = datetime.timedelta(seconds=(durationSeconds / 100))
+                        cropDetectDuration = f'{self.timedeltaFormat(duration)}'
                     else:
                         cropDetectStart = '0'
                         cropDetectDuration = '60'
 
+                    cropDetectVideoFilterList = list(videoFilterList)
                     cropDetectVideoFilterList.append('cropdetect')
 
                     transcodeArgs = [
@@ -310,10 +318,11 @@ class AVTC:
 
                     videoFilterList.append(f'crop={crop}')
 
-            timeCompletedCrop = int(time.time()) - timeStarted
+            now = datetime.datetime.now()
+            delta = now - timeStarted
             print(
-                f'{time.strftime("%X")} Analysis completed in',
-                f'{datetime.timedelta(seconds=timeCompletedCrop)}'
+                f'{now:%H:%M:%S} Analysis completed in',
+                f'{self.timedeltaFormat(delta)}'
             )
             print(f'{timeSpace} Duration: {durationString}')
             print(f'{timeSpace} Input  Resolution: {input_w}x{input_h}')
@@ -322,8 +331,8 @@ class AVTC:
             else:
                 print(f'{timeSpace} Output Resolution: {input_w}x{input_h}')
 
-            timeStartTranscoding = int(time.time())
-            print(timeSpace, 'Transcoding Started')
+            timeStartTranscoding = now
+            print(f'{timeSpace} Transcoding Started')
 
             transcodeArgs = []
             if not videoFilterList:
@@ -354,12 +363,11 @@ class AVTC:
             if returncode == 0:
                 os.remove(f'{file}.lock')
                 os.makedirs(self.inputDir, exist_ok=True)
-                timeCompletedTranscoding = (
-                    int(time.time()) - timeStartTranscoding
-                )
+                now = datetime.datetime.now()
+                delta = now - timeStartTranscoding
                 print(
-                    f'{time.strftime("%X")} Transcoding completed in',
-                    f'{datetime.timedelta(seconds=timeCompletedTranscoding)}'
+                    f'{now:%H:%M:%S} Transcoding completed in',
+                    f'{self.timedeltaFormat(delta)}'
                 )
                 print(f'{timeSpace} Setting Metadata')
                 self.setMetadata(outputFilePart, filename)
@@ -367,7 +375,8 @@ class AVTC:
                 os.rename(file, inputFile)
             else:
                 self.writeErrorFile(errorFile, transcodeArgs, stderrList)
-                print(f'{time.strftime("%X")} Error: transcoding stopped\n')
+                now = datetime.datetime.now()
+                print(f'{now:%H:%M:%S} Error: transcoding stopped\n')
 
 
 def main():
