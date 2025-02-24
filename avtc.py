@@ -334,20 +334,19 @@ class AVTC:
             timeStartTranscoding = now
             print(f'{timeSpace} Transcoding Started')
 
-            transcodeArgs = []
-            if not videoFilterList:
-                transcodeArgs = [
+            transcodeArgs = [
                     'ffmpeg',
                     '-i', f'./{file}'
                 ]
-            else:
-                transcodeArgs = [
-                    'ffmpeg',
-                    '-i', f'./{file}',
+            if videoFilterList:
+                transcodeArgs.extend([
                     '-filter:v', ','.join(videoFilterList)
-                ]
+                ])
             transcodeArgs.extend(mapList)
             transcodeArgs.extend(videoList)
+            transcodeArgs.extend([
+                '-svtav1-params', 'tune=2'
+            ])
             transcodeArgs.extend(audioList)
             transcodeArgs.extend(subtitleList)
             transcodeArgs.extend([
