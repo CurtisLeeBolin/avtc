@@ -345,7 +345,7 @@ class AVTC:
             transcodeArgs.extend(mapList)
             transcodeArgs.extend(videoList)
             transcodeArgs.extend([
-                '-svtav1-params', 'tune=2'
+                '-svtav1-params', 'tune=2:preset=5'
             ])
             transcodeArgs.extend(audioList)
             transcodeArgs.extend(subtitleList)
