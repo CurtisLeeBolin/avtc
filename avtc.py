@@ -335,9 +335,9 @@ class AVTC:
             print(f'{timeSpace} Transcoding Started')
 
             transcodeArgs = [
-                    'ffmpeg',
-                    '-i', f'./{file}'
-                ]
+                'ffmpeg',
+                '-i', f'./{file}'
+            ]
             if videoFilterList:
                 transcodeArgs.extend([
                     '-filter:v', ','.join(videoFilterList)
