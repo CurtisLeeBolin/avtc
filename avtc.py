@@ -345,7 +345,7 @@ class AVTC:
                 '-metadata', f'title={filename}',
                 '-metadata', 'svtav1-params=tune=2:preset=5',
                 '-y',
-                '-f', 'matroska',
+                '-f', 'webm',
                 outputFilePart
             ])
             transcodeArgs = list(filter(None, transcodeArgs))
