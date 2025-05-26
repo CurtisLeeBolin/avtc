@@ -125,16 +125,6 @@ class AVTC:
             stderr = ''.join(stderrList)
             f.write(f'{transcodeArgs}\n\n{stderr}')
 
-    def setMetadata(self, file, title):
-        args = [
-            'mkvpropedit',
-            f'./{file}',
-            '--tags', 'all:',
-            '--edit', 'info',
-            '--set', f'title={title}'
-        ]
-        return self.runSubprocess(args)
-
     def transcode(
         self,
         file,
@@ -351,6 +341,9 @@ class AVTC:
             transcodeArgs.extend(subtitleList)
             transcodeArgs.extend([
                 '-max_muxing_queue_size', '1024',
+                '-map_metadata', '0',
+                '-metadata', f'title={filename}',
+                '-metadata', 'svtav1-params=tune=2:preset=5',
                 '-y',
                 '-f', 'matroska',
                 outputFilePart
@@ -369,7 +362,6 @@ class AVTC:
                     f'{self.timedeltaFormat(delta)}'
                 )
                 print(f'{timeSpace} Setting Metadata')
-                self.setMetadata(outputFilePart, filename)
                 os.rename(outputFilePart, outputFile)
                 os.rename(file, inputFile)
             else:
