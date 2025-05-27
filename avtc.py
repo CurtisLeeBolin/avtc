@@ -361,7 +361,6 @@ class AVTC:
                     f'{now:%H:%M:%S} Transcoding completed in',
                     f'{self.timedeltaFormat(delta)}'
                 )
-                print(f'{timeSpace} Setting Metadata')
                 os.rename(outputFilePart, outputFile)
                 os.rename(file, inputFile)
             else:
