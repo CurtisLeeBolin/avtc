@@ -31,7 +31,7 @@ $ python -m pip install .
 
 ```
 $ avtc --help
-usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [-f [FILELIST ...]] [-t]
+usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [--disablelockfile] [-f [FILE_LIST ...]]
 
 Audio Video TransCoder
 
@@ -39,13 +39,13 @@ options:
   -h, --help            show this help message and exit
   --crop                Auto Crop Videos
   --deinterlace         Deinterlace Videos
-  -d DIRECTORY, --directory DIRECTORY
+  -d, --directory DIRECTORY
                         A directory
-  -f [FILELIST ...], --filelist [FILELIST ...]
+  --disablelockfile     Disables lockfiles when using --filelist
+  -f, --filelist [FILE_LIST ...]
                         File list in the current directory
-  -t, --transcode       Force file/s to be transcoded
 
-Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2025 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 ```
 
 #### Change to a directory with videos you want to transcode
