@@ -386,17 +386,17 @@ def main():
         help = 'A directory'
     )
     parser.add_argument(
+        '--disablelockfile',
+        dest = 'disable_lockfile',
+        help = 'Disables lockfiles when using --filelist',
+        action = 'store_true'
+    )
+    parser.add_argument(
         '-f',
         '--filelist',
         dest = 'file_list',
         nargs = '*',
         help = 'File list in the current directory'
-    )
-    parser.add_argument(
-        '--disablelockfile',
-        dest = 'disable_lockfile',
-        help = 'Disables lockfiles when using --filelist',
-        action = 'store_true'
     )
     args = parser.parse_args()
 
