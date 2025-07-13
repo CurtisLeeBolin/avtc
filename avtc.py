@@ -138,7 +138,7 @@ class AudioVideoTransCoder:
         output_dir = f'{working_dir}/{self.output_dir}{file_workdir_delta}'
         output_file = f'{output_dir}/{filename}.webm'
         output_file_part = f'{output_file}.part'
-        error_file = f'{output_file}.error'
+        error_file = f'{file}.error'
         lock_file = f'{file}.lock'
         time_spacing = f'{" ":>9}'
 
@@ -158,6 +158,8 @@ class AudioVideoTransCoder:
         returncode, stderr_list = self.run_subprocess(transcode_args)
         if returncode != 0:
             self.write_error_file(error_file, transcode_args, stderr_list)
+            print()
+            return
 
         stream_list = [x for x in stderr_list if 'Stream #0' in x]
         stderr_data = ''.join(stderr_list)
