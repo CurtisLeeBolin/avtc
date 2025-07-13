@@ -359,7 +359,7 @@ class AudioVideoTransCoder:
                 delta = now - time_start_transcoding
                 print(
                     f'{now:%H:%M:%S} Transcoding completed in',
-                    f'{self.time_delta_format(delta)}'
+                    f'{self.time_delta_format(delta)}\n'
                 )
                 os.rename(output_file_part, output_file)
                 os.rename(file, input_file)
