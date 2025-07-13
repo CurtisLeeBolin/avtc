@@ -40,29 +40,24 @@ class AudioVideoTransCoder:
 
     def __init__(
         self,
-        working_dir,
         file_list,
         disable_lockfile=False,
         crop=False,
         deinterlace=False
     ):
-        self.working_dir = working_dir
         self.file_list = file_list
         self.disable_lockfile = disable_lockfile
         self.crop = crop
         self.deinterlace = deinterlace
 
     def run(self):
-        for file in self.file_list:
-            if os.path.isfile(file):
-                filename, file_ext = os.path.splitext(file)
-                if self.check_file_type(file_ext):
-                    self.transcode(
-                        file,
-                        filename,
-                        self.crop,
-                        self.deinterlace
-                    )
+        for file_dict in self.file_list:
+            self.transcode(
+                file_dict['file'],
+                file_dict['working_dir'],
+                self.crop,
+                self.deinterlace
+            )
 
     def check_file_type(self, file_ext):
         file_ext = file_ext[1:].lower()
@@ -127,19 +122,32 @@ class AudioVideoTransCoder:
     def transcode(
         self,
         file,
-        filename,
+        working_dir,
         crop,
         deinterlace
     ):
-        input_file = f'{self.input_dir}/{file}'
-        output_file = f'{self.output_dir}/{filename}.webm'
+        if not os.path.isfile(file):
+            return
+
+        filename_full, file_ext = os.path.splitext(file)
+        if not self.check_file_type(file_ext):
+            return
+
+        file_dir = '/'.join(file.split('/')[0:-1])
+        file_workdir_delta = file_dir.replace(working_dir, '')
+        filename = filename_full.split('/')[-1]
+        input_dir = f'{working_dir}/{self.input_dir}{file_workdir_delta}'
+        input_file = f'{input_dir}/{filename}.{file_ext}'
+        output_dir = f'{working_dir}/{self.output_dir}{file_workdir_delta}'
+        output_file = f'{output_dir}/{filename}.webm'
         output_file_part = f'{output_file}.part'
         error_file = f'{output_file}.error'
+        lock_file = f'{file}.lock'
         time_spacing = f'{" ":>9}'
 
         if self.disable_lockfile == False:
-            if not os.path.isfile(f'{file}.lock'):
-                with open(f'{file}.lock', 'w') as f:
+            if not os.path.isfile(lock_file):
+                with open(lock_file, 'w') as f:
                     pass
             else:
                 return
@@ -149,7 +157,7 @@ class AudioVideoTransCoder:
 
         time_started = now
 
-        transcode_args = ['ffprobe', '-hide_banner', '-i', f'./{file}']
+        transcode_args = ['ffprobe', '-hide_banner', '-i', file]
         returncode, stderr_list = self.run_subprocess(transcode_args)
         if returncode != 0:
             self.write_error_file(error_file, transcode_args, stderr_list)
@@ -272,7 +280,7 @@ class AudioVideoTransCoder:
                 '-nostats',
                 '-ss', crop_detect_start,
                 '-t', crop_detect_duration,
-                '-i', f'./{file}',
+                '-i', file,
                 '-filter:v', ','.join(crop_detect_video_filter_list),
                 '-an',
                 '-sn',
@@ -316,7 +324,7 @@ class AudioVideoTransCoder:
 
         transcode_args = [
             'ffmpeg',
-            '-i', f'./{file}'
+            '-i', file
         ]
         if video_filter_list:
             transcode_args.extend([
@@ -340,11 +348,12 @@ class AudioVideoTransCoder:
         ])
         transcode_args = list(filter(None, transcode_args))
 
-        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
         returncode, stderr_list = self.run_subprocess(transcode_args)
         if returncode == 0:
-            os.remove(f'{file}.lock')
-            os.makedirs(self.input_dir, exist_ok=True)
+            if self.disable_lockfile == False:
+                os.remove(lock_file)
+            os.makedirs(input_dir, exist_ok=True)
             now = datetime.datetime.now()
             delta = now - time_start_transcoding
             print(
@@ -401,14 +410,28 @@ def main():
         exit(1)
     elif (args.file_list):
         working_dir = os.getcwd()
-        file_list = args.file_list
+        file_list = []
+        for file in args.file_list:
+            file_list.append(
+                {
+                    'working_dir': working_dir,
+                    'file': f'{working_dir}/{file}'
+                }
+            )
     else:
         working_dir = os.getcwd()
-        file_list = os.listdir(working_dir)
-        file_list.sort()
+        file_list = []
+        listdir = os.listdir(working_dir)
+        listdir.sort()
+        for file in listdir:
+            file_list.append(
+                {
+                    'working_dir': working_dir,
+                    'file': f'{working_dir}/{file}'
+                }
+            )
 
     tc = AudioVideoTransCoder(
-        working_dir,
         file_list,
         args.disable_lockfile,
         args.crop,
