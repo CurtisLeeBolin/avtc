@@ -44,15 +44,13 @@ class AudioVideoTransCoder:
         file_list,
         disable_lockfile=False,
         crop=False,
-        deinterlace=False,
-        transcode_force=False
+        deinterlace=False
     ):
         self.working_dir = working_dir
         self.file_list = file_list
         self.disable_lockfile = disable_lockfile
         self.crop = crop
         self.deinterlace = deinterlace
-        self.transcode_force = transcode_force
 
     def run(self):
         for file in self.file_list:
@@ -63,8 +61,7 @@ class AudioVideoTransCoder:
                         file,
                         filename,
                         self.crop,
-                        self.deinterlace,
-                        self.transcode_force
+                        self.deinterlace
                     )
 
     def check_file_type(self, file_ext):
@@ -132,8 +129,7 @@ class AudioVideoTransCoder:
         file,
         filename,
         crop,
-        deinterlace,
-        transcode_force
+        deinterlace
     ):
         input_file = f'{self.input_dir}/{file}'
         output_file = f'{self.output_dir}/{filename}.webm'
@@ -158,7 +154,6 @@ class AudioVideoTransCoder:
         if returncode != 0:
             self.write_error_file(error_file, transcode_args, stderr_list)
 
-        video_copy = False
         stream_list = [x for x in stderr_list if 'Stream #0' in x]
         stderr_data = ''.join(stderr_list)
         map_list = []
@@ -177,18 +172,9 @@ class AudioVideoTransCoder:
                 if not self.check_for_image(stream):
                     result = re.findall(r'Stream #0:(\d+)', stream)
                     map_list.extend(['-map', f'0:{result[0]}'])
-                    if (
-                        not transcode_force and not deinterlace
-                        and re.search('av1', stream) is not None
-                    ):
-                        video_list.extend([
-                            f'-c:v:{video_stream_number}', 'copy'
-                        ])
-                        video_copy = True
-                    else:
-                        video_list.extend([
-                            f'-c:v:{video_stream_number}', 'libsvtav1'
-                        ])
+                    video_list.extend([
+                        f'-c:v:{video_stream_number}', 'libsvtav1'
+                    ])
                     video_stream_number = video_stream_number + 1
                     resolution = re.findall(
                         r'Video: .*? (\d\d+x\d+)', stream
@@ -264,54 +250,53 @@ class AudioVideoTransCoder:
             duration_string = 'N/A'
             duration_seconds = 0
         video_filter_list = []
-        if not video_copy:
-            if deinterlace:
-                video_filter_list.append('bwdif')
+        if deinterlace:
+            video_filter_list.append('bwdif')
 
-            if crop:
-                if duration_seconds != 0 and duration_seconds > 60:
-                    start = datetime.timedelta(seconds=(duration_seconds / 10))
-                    crop_detect_start = f'{self.time_delta_format(start)}'
-                    duration = datetime.timedelta(seconds=(duration_seconds / 100))
-                    crop_detect_duration = f'{self.time_delta_format(duration)}'
-                else:
-                    crop_detect_start = '0'
-                    crop_detect_duration = '60'
+        if crop:
+            if duration_seconds != 0 and duration_seconds > 60:
+                start = datetime.timedelta(seconds=(duration_seconds / 10))
+                crop_detect_start = f'{self.time_delta_format(start)}'
+                duration = datetime.timedelta(seconds=(duration_seconds / 100))
+                crop_detect_duration = f'{self.time_delta_format(duration)}'
+            else:
+                crop_detect_start = '0'
+                crop_detect_duration = '60'
 
-                crop_detect_video_filter_list = list(video_filter_list)
-                crop_detect_video_filter_list.append('cropdetect')
+            crop_detect_video_filter_list = list(video_filter_list)
+            crop_detect_video_filter_list.append('cropdetect')
 
-                transcode_args = [
-                    'ffmpeg',
-                    '-hide_banner',
-                    '-nostats',
-                    '-ss', crop_detect_start,
-                    '-t', crop_detect_duration,
-                    '-i', f'./{file}',
-                    '-filter:v', ','.join(crop_detect_video_filter_list),
-                    '-an',
-                    '-sn',
-                    '-f', 'rawvideo',
-                    '-y',
-                    os.devnull
-                ]
+            transcode_args = [
+                'ffmpeg',
+                '-hide_banner',
+                '-nostats',
+                '-ss', crop_detect_start,
+                '-t', crop_detect_duration,
+                '-i', f'./{file}',
+                '-filter:v', ','.join(crop_detect_video_filter_list),
+                '-an',
+                '-sn',
+                '-f', 'rawvideo',
+                '-y',
+                os.devnull
+            ]
 
-                returncode, stderr_list = self.run_subprocess(transcode_args)
-                if returncode != 0:
-                    self.write_error_file(
-                        error_file,
-                        transcode_args,
-                        stderr_list
-                    )
+            returncode, stderr_list = self.run_subprocess(transcode_args)
+            if returncode != 0:
+                self.write_error_file(
+                    error_file,
+                    transcode_args,
+                    stderr_list
+                )
 
-                stderr_data = ''.join(stderr_list)
+            stderr_data = ''.join(stderr_list)
 
-                crop = re.findall('crop=(.*?)\n', stderr_data)[-1]
-                crop_list = crop.split(':')
-                w = int(crop_list[0])
-                h = int(crop_list[1])
+            crop = re.findall('crop=(.*?)\n', stderr_data)[-1]
+            crop_list = crop.split(':')
+            w = int(crop_list[0])
+            h = int(crop_list[1])
 
-                video_filter_list.append(f'crop={crop}')
+            video_filter_list.append(f'crop={crop}')
 
         now = datetime.datetime.now()
         delta = now - time_started
@@ -321,7 +306,7 @@ class AudioVideoTransCoder:
         )
         print(f'{time_spacing} Duration: {duration_string}')
         print(f'{time_spacing} Input  Resolution: {input_w}x{input_h}')
-        if crop and not video_copy:
+        if crop:
             print(f'{time_spacing} Output Resolution: {w}x{h}')
         else:
             print(f'{time_spacing} Output Resolution: {input_w}x{input_h}')
@@ -413,12 +398,6 @@ def main():
         help = 'Disables lockfiles when using --filelist',
         action = 'store_true'
     )
-    parser.add_argument(
-        '-t',
-        '--transcode',
-        help = 'Force file/s to be transcoded',
-        action = 'store_true'
-    )
     args = parser.parse_args()
 
     if (args.file_list and args.directory):
@@ -450,7 +429,6 @@ def main():
         args.disable_lockfile,
         args.crop,
         args.deinterlace,
-        args.transcode
     )
     tc.run()
 
