@@ -3,7 +3,7 @@ avtc
 
 **A**udio **V**ideo **T**rans**C**oder - Batch transcodes Audio Video files to AV1/Opus/WebVTT/WebM.
 
-Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
+Copyright 2013-2025 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>
 
 Documentation
 -------------
