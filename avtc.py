@@ -366,7 +366,7 @@ def main():
         prog = 'avtc.py',
         description = 'Audio Video TransCoder',
         epilog = (
-            'Copyright 2013-2024 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'
+            'Copyright 2013-2025 Curtis Lee Bolin <CurtisLeeBolin@gmail.com>'
         )
     )
     parser.add_argument(
