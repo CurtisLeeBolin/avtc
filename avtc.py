@@ -60,13 +60,10 @@ class AudioVideoTransCoder:
             )
 
     def check_file_type(self, file_ext):
-        file_ext = file_ext[1:].lower()
-        result = False
-        for ext in self.file_ext_list:
-            if (ext == file_ext):
-                result = True
-                break
-        return result
+        if file_ext[1:].lower() in self.file_ext_list:
+            return True
+        else:
+            return False
 
     def check_for_image(self, videoString):
         for each in self.image_type_list:
