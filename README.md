@@ -31,7 +31,7 @@ $ python -m pip install .
 
 ```
 $ avtc --help
-usage: avtc.py [-h] [--crop] [--deinterlace] [-d DIRECTORY] [--disablelockfile] [-f [FILE_LIST ...]]
+usage: avtc.py [-h] [--crop] [--deinterlace] [--disablelockfile] [-f [FILE_LIST ...]]
 
 Audio Video TransCoder
 
@@ -39,8 +39,6 @@ options:
   -h, --help            show this help message and exit
   --crop                Auto Crop Videos
   --deinterlace         Deinterlace Videos
-  -d, --directory DIRECTORY
-                        A directory
   --disablelockfile     Disables lockfiles when using --filelist
   -f, --filelist [FILE_LIST ...]
                         File list in the current directory
