@@ -427,7 +427,7 @@ def main():
             'used together'
         )
         exit(1)
-    if (not args.file_list and args.disable_lockfile):
+    elif (not args.file_list and args.disable_lockfile):
         print(
             'Argument --disablelockfile requires argument -f (--filelist)'
         )
