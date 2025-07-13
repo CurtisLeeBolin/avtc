@@ -380,12 +380,6 @@ def main():
         action = 'store_true'
     )
     parser.add_argument(
-        '-d',
-        '--directory',
-        dest = 'directory',
-        help = 'A directory'
-    )
-    parser.add_argument(
         '--disablelockfile',
         dest = 'disable_lockfile',
         help = 'Disables lockfiles when using --filelist',
@@ -400,13 +394,7 @@ def main():
     )
     args = parser.parse_args()
 
-    if (args.file_list and args.directory):
-        print(
-            'Arguments -f (--filelist) and -d (--directory) can not be ',
-            'used together'
-        )
-        exit(1)
-    elif (not args.file_list and args.disable_lockfile):
+    if (not args.file_list and args.disable_lockfile):
         print(
             'Argument --disablelockfile requires argument -f (--filelist)'
         )
@@ -414,10 +402,6 @@ def main():
     elif (args.file_list):
         working_dir = os.getcwd()
         file_list = args.file_list
-    elif (args.directory):
-        working_dir = args.directory
-        file_list = os.listdir(working_dir)
-        file_list.sort()
     else:
         working_dir = os.getcwd()
         file_list = os.listdir(working_dir)
