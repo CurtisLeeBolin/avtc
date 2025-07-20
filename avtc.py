@@ -60,7 +60,7 @@ class AudioVideoTransCoder:
             )
 
     def check_file_type(self, file_ext):
-        if file_ext[1:].lower() in self.file_ext_list:
+        if file_ext.lower() in self.file_ext_list:
             return True
         else:
             return False
@@ -127,6 +127,7 @@ class AudioVideoTransCoder:
             return
 
         filename_full, file_ext = os.path.splitext(file)
+        file_ext = file_ext[1:]
         if not self.check_file_type(file_ext):
             return
 
