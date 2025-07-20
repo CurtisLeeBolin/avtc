@@ -369,6 +369,7 @@ class AudioVideoTransCoder:
 
 
 def main():
+    import sys
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -407,7 +408,7 @@ def main():
         print(
             'Argument --disablelockfile requires argument -f (--filelist)'
         )
-        exit(1)
+        sys.exit(1)
     elif (args.file_list):
         working_dir = os.getcwd()
         file_list = []
