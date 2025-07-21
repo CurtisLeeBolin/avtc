@@ -120,8 +120,8 @@ class AudioVideoTransCoder:
         self,
         file,
         working_dir,
-        crop,
-        deinterlace
+        crop=False,
+        deinterlace=False
     ):
         if not os.path.isfile(file):
             return
@@ -366,6 +366,8 @@ class AudioVideoTransCoder:
             self.write_error_file(error_file, transcode_args, stderr_list)
             now = datetime.datetime.now()
             print(f'{now:%H:%M:%S} Error: transcoding stopped\n')
+
+        return returncode
 
 
 def main():
