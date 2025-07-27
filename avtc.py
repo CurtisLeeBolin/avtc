@@ -124,12 +124,12 @@ class AudioVideoTransCoder:
         deinterlace=False
     ):
         if not os.path.isfile(file):
-            return
+            return 'File does not exist.'
 
         filename_full, file_ext = os.path.splitext(file)
         file_ext = file_ext[1:]
         if not self.check_file_type(file_ext):
-            return
+            return 'Wrong file type.'
 
         file_dir = '/'.join(file.split('/')[0:-1])
         file_workdir_delta = file_dir.replace(working_dir, '')
@@ -148,7 +148,7 @@ class AudioVideoTransCoder:
                 with open(lock_file, 'w') as f:
                     pass
             else:
-                return
+                return 'Lock file already exists.'
 
         now = datetime.datetime.now()
         print(f'{now:%H:%M:%S} Analyzing \'{filename}\'')
@@ -160,7 +160,7 @@ class AudioVideoTransCoder:
         if returncode != 0:
             self.write_error_file(error_file, transcode_args, stderr_list)
             print()
-            return
+            return 'Error wile analysing the file.'
 
         stream_list = [x for x in stderr_list if 'Stream #0' in x]
         stderr_data = ''.join(stderr_list)
@@ -362,12 +362,12 @@ class AudioVideoTransCoder:
             )
             os.rename(output_file_part, output_file)
             os.rename(file, input_file)
+            return None
         else:
             self.write_error_file(error_file, transcode_args, stderr_list)
             now = datetime.datetime.now()
             print(f'{now:%H:%M:%S} Error: transcoding stopped\n')
-
-        return returncode
+            return 'Error during transcode.'
 
 
 def main():
