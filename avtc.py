@@ -351,7 +351,7 @@ class AudioVideoTransCoder:
         os.makedirs(output_dir, exist_ok=True)
         returncode, stderr_list = self.run_subprocess(transcode_args)
         if returncode == 0:
-            if self.disable_lockfile == False:
+            if self.disable_lockfile == False and os.path.exists(lock_file):
                 os.remove(lock_file)
             os.makedirs(input_dir, exist_ok=True)
             now = datetime.datetime.now()
@@ -360,8 +360,14 @@ class AudioVideoTransCoder:
                 f'{now:%H:%M:%S} Transcoding completed in',
                 f'{self.time_delta_format(delta)}\n'
             )
-            os.rename(output_file_part, output_file)
-            os.rename(file, input_file)
+            if os.path.exists(output_file_part):
+                os.rename(output_file_part, output_file)
+            else:
+                return 'Output part file does not exist.'
+            if os.path.exists(file) and os.path.exists(input_dir):
+                os.rename(file, input_file)
+            else:
+                return 'File or input directory does not exist'
             return None
         else:
             self.write_error_file(error_file, transcode_args, stderr_list)
