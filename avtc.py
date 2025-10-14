@@ -37,6 +37,7 @@ class AudioVideoTransCoder:
     image_type_list = ['mjpeg', 'png']
     input_dir = '0in'
     output_dir = '0out'
+    log_tab_spaces = 2
 
     def __init__(
         self,
@@ -70,6 +71,9 @@ class AudioVideoTransCoder:
             if each in videoString:
                 return True
         return False
+
+    def log(self, print_str):
+        print(print_str.expandtabs(tabsize=2))
 
     def print_on_same_line(self, line):
         columns, lines = os.get_terminal_size()
@@ -141,7 +145,6 @@ class AudioVideoTransCoder:
         output_file_part = f'{output_file}.part'
         error_file = f'{file}.error'
         lock_file = f'{file}.lock'
-        time_spacing = f'{" ":>9}'
 
         if self.disable_lockfile == False:
             if not os.path.isfile(lock_file):
@@ -151,7 +154,7 @@ class AudioVideoTransCoder:
                 return 'Lock file already exists.'
 
         now = datetime.datetime.now()
-        print(f'{now:%H:%M:%S} Analyzing \'{filename}\'')
+        self.log(f'{now:%H:%M:%S} Analyzing \'{filename}\'')
 
         time_started = now
 
@@ -308,19 +311,19 @@ class AudioVideoTransCoder:
 
         now = datetime.datetime.now()
         delta = now - time_started
-        print(
-            f'{now:%H:%M:%S} Analysis completed in',
-            f'{self.time_delta_format(delta)}'
-        )
-        print(f'{time_spacing} Duration: {duration_string}')
-        print(f'{time_spacing} Input  Resolution: {input_w}x{input_h}')
+        self.log(f'{now:%H:%M:%S} Analysis completed in {self.time_delta_format(delta)}')
+        self.log(f'\tDuration: {duration_string}')
+        self.log(f'\tInput:')
+        self.log(f'\t\tResolution: {input_w}x{input_h}')
         if crop:
-            print(f'{time_spacing} Output Resolution: {w}x{h}')
+            self.log(f'\tOutput')
+            self.log(f'\t\tResolution: {w}x{h}')
         else:
-            print(f'{time_spacing} Output Resolution: {input_w}x{input_h}')
+            self.log(f'\tOutput')
+            self.log(f'\t\tResolution: {input_w}x{input_h}')
 
         time_start_transcoding = now
-        print(f'{time_spacing} Transcoding Started')
+        self.log(f'\tTranscoding Started')
 
         transcode_args = [
             'ffmpeg',
@@ -356,10 +359,7 @@ class AudioVideoTransCoder:
             os.makedirs(input_dir, exist_ok=True)
             now = datetime.datetime.now()
             delta = now - time_start_transcoding
-            print(
-                f'{now:%H:%M:%S} Transcoding completed in',
-                f'{self.time_delta_format(delta)}\n'
-            )
+            self.log(f'{now:%H:%M:%S} Transcoding completed in {self.time_delta_format(delta)}\n')
             if os.path.exists(output_file_part):
                 os.rename(output_file_part, output_file)
             else:
@@ -372,7 +372,7 @@ class AudioVideoTransCoder:
         else:
             self.write_error_file(error_file, transcode_args, stderr_list)
             now = datetime.datetime.now()
-            print(f'{now:%H:%M:%S} Error: transcoding stopped\n')
+            self.log(f'{now:%H:%M:%S} Error: transcoding stopped\n')
             return 'Error during transcode.'
 
 
