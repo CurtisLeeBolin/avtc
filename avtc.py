@@ -312,9 +312,9 @@ class AudioVideoTransCoder:
         now = datetime.datetime.now()
         delta = now - time_started
         self.log(f'{now:%H:%M:%S} Analysis completed in {self.time_delta_format(delta)}')
-        self.log(f'\tDuration: {duration_string}')
         self.log(f'\tInput:')
         self.log(f'\t\tResolution: {input_w}x{input_h}')
+        self.log(f'\t\tDuration: {duration_string}')
         self.log(f'\t\tSize: {os.path.getsize(file)/1024:.0f}KiB')
         if crop:
             self.log(f'\tOutput')
