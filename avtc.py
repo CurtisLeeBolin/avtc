@@ -315,6 +315,7 @@ class AudioVideoTransCoder:
         self.log(f'\tDuration: {duration_string}')
         self.log(f'\tInput:')
         self.log(f'\t\tResolution: {input_w}x{input_h}')
+        self.log(f'\t\tSize: {os.path.getsize(file)/1024:.0f}KiB')
         if crop:
             self.log(f'\tOutput')
             self.log(f'\t\tResolution: {w}x{h}')
