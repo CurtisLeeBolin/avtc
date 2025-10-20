@@ -72,9 +72,6 @@ class AudioVideoTransCoder:
                 return True
         return False
 
-    def log(self, print_str):
-        print(print_str.expandtabs(tabsize=2))
-
     def print_on_same_line(self, line):
         columns, lines = os.get_terminal_size()
         clear_line_string = ' ' * columns
@@ -153,8 +150,9 @@ class AudioVideoTransCoder:
             else:
                 return 'Lock file already exists.'
 
+        print(f'File: \'{file}\'')
         now = datetime.datetime.now()
-        self.log(f'{now:%H:%M:%S} Analyzing \'{filename}\'')
+        print(f'Start Time: {now:%H:%M:%S}')
 
         time_started = now
 
@@ -311,20 +309,11 @@ class AudioVideoTransCoder:
 
         now = datetime.datetime.now()
         delta = now - time_started
-        self.log(f'{now:%H:%M:%S} Analysis completed in {self.time_delta_format(delta)}')
-        self.log(f'\tInput:')
-        self.log(f'\t\tResolution: {input_w}x{input_h}')
-        self.log(f'\t\tDuration: {duration_string}')
-        self.log(f'\t\tSize: {os.path.getsize(file)/1024:.0f}KiB')
+        print(f'Resolution: {input_w}x{input_h}')
+        print(f'Duration: {duration_string}')
+        print(f'Size: {os.path.getsize(file)/1024:.0f}KiB')
         if crop:
-            self.log(f'\tOutput')
-            self.log(f'\t\tResolution: {w}x{h}')
-        else:
-            self.log(f'\tOutput')
-            self.log(f'\t\tResolution: {input_w}x{input_h}')
-
-        time_start_transcoding = now
-        self.log(f'\tTranscoding Started')
+            print(f'Cropped Resolution: {w}x{h}')
 
         transcode_args = [
             'ffmpeg',
@@ -359,8 +348,8 @@ class AudioVideoTransCoder:
                 os.remove(lock_file)
             os.makedirs(input_dir, exist_ok=True)
             now = datetime.datetime.now()
-            delta = now - time_start_transcoding
-            self.log(f'{now:%H:%M:%S} Transcoding completed in {self.time_delta_format(delta)}\n')
+            print(f'End Time: {now:%H:%M:%S}')
+            print()
             if os.path.exists(output_file_part):
                 os.rename(output_file_part, output_file)
             else:
@@ -373,7 +362,8 @@ class AudioVideoTransCoder:
         else:
             self.write_error_file(error_file, transcode_args, stderr_list)
             now = datetime.datetime.now()
-            self.log(f'{now:%H:%M:%S} Error: transcoding stopped\n')
+            print(f'Error: transcoding stopped')
+            print()
             return 'Error during transcode.'
 
 
