@@ -25,6 +25,7 @@ import datetime
 import os
 import re
 import subprocess
+import sys
 
 
 class AudioVideoTransCoder:
@@ -105,7 +106,10 @@ class AudioVideoTransCoder:
             stderr_list = ['']*1024
             if p.stderr is not None:
                 for line in p.stderr:
-                    self.print_on_same_line(line)
+                    if sys.stdout.isatty():
+                        self.print_on_same_line(line)
+                    else:
+                        print(line, end='')
                     del stderr_list[0]
                     stderr_list.append(line)
                 print()
