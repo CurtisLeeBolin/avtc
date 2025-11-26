@@ -319,10 +319,13 @@ class AudioVideoTransCoder:
         if crop:
             print(f'Cropped Resolution: {w}x{h}')
 
-        transcode_args = [
-            'ffmpeg',
-            '-i', file
-        ]
+        transcode_args = ['ffmpeg']
+
+        if not sys.stdout.isatty():
+            transcode_args.extend(['-loglevel', 'error'])
+
+        transcode_args.extend(['-i', file])
+
         if video_filter_list:
             transcode_args.extend([
                 '-filter:v', ','.join(video_filter_list)
