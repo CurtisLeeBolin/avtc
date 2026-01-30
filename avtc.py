@@ -326,6 +326,11 @@ class AudioVideoTransCoder:
 
         transcode_args.extend(['-i', file])
 
+        video_filter_list.extend([
+            "fps=fps='if(isnan(source_fps), source_fps, "
+            "if(gt(source_fps,47), source_fps/2, source_fps))'"
+        ])
+
         if video_filter_list:
             transcode_args.extend([
                 '-filter:v', ','.join(video_filter_list)
