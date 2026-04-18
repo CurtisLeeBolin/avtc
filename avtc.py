@@ -101,7 +101,8 @@ class AudioVideoTransCoder:
         with subprocess.Popen(
             command,
             stderr = subprocess.PIPE,
-            universal_newlines = True
+            text = True,
+            errors = 'replace'
         ) as p:
             stderr_list = ['']*1024
             if p.stderr is not None:
