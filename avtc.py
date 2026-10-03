@@ -227,7 +227,9 @@ class AudioVideoTransCoder:
                     elif re.search(r'5.0\(side\)', stream) is not None:
                         audio_list.extend([
                             f'-filter:a:{audio_stream_number}',
-                            'aformat=channel_layouts=5.0'
+                            'aformat=channel_layouts=5.0',
+                            '-mapping_family',
+                            '1'
                         ])
                     audio_list.extend([
                         f'-c:a:{audio_stream_number}', 'libopus',
